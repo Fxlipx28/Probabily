@@ -80,7 +80,7 @@ def metricas(s):
         "d1": float(px / s.iloc[-2] - 1), "w1": cal(7), "m1": cal(30), "m3": cal(91),
         "m6": cal(182), "y1": cal(365), "ytd": ytd,
         "vol": vol, "dd": dd, "mdd": mdd, "sharpe": sharpe,
-        "rsi": float(rsi_serie(s).iloc[-1]), "tendencia": tend,
+        "rsi": (lambda x: 50.0 if not np.isfinite(x) else float(x))(rsi_serie(s).iloc[-1]), "tendencia": tend,
         "dist_sma50": px / sma50 - 1, "dist_sma200": px / sma200 - 1,
         "sigma1d": float(lr.iloc[-60:].std()),
     }
@@ -108,11 +108,19 @@ def simular(s, rng, n_sims=10000):
     """
     ppy = pasos_por_anio(s)
     r = np.log(s).diff().dropna().to_numpy()[-1500:]
+    r = r[np.isfinite(r)]
+    sd = float(np.std(r)) if len(r) else 0.0
+    if len(r) < 100 or sd <= 0:
+        raise ValueError("serie sin variación suficiente")
+    piso = (0.3 * sd) ** 2  # evita volatilidad ~0 en activos con muchos días sin movimiento
     var = pd.Series(r ** 2).ewm(alpha=1 - LAMBDA, adjust=False).mean().shift(1).to_numpy().copy()
     var[0] = np.var(r[:30]) if len(r) >= 30 else np.var(r)
-    z = r / np.sqrt(var)
+    var = np.maximum(np.nan_to_num(var, nan=sd ** 2), piso)
+    z = np.clip(r / np.sqrt(var), -10, 10)
+    if z.std() <= 0:
+        raise ValueError("serie sin variación suficiente")
     z = (z - z.mean()) / z.std()
-    var_sig = LAMBDA * var[-1] + (1 - LAMBDA) * r[-1] ** 2
+    var_sig = max(LAMBDA * var[-1] + (1 - LAMBDA) * r[-1] ** 2, piso)
     largo = float(np.var(r))
     omega = (1 - GARCH_ALPHA - GARCH_BETA) * largo
     mu_a = float(np.clip(DERIVA_FACTOR * r.mean() * ppy, -0.15, 0.25))

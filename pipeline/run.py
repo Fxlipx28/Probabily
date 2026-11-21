@@ -112,14 +112,20 @@ def main(argv=None):
         if len(s) < A.MIN_OBS or s.index[-1] < df.index.max() - pd.Timedelta(days=10):  # sin historia o dato viejo
             sin_datos.append({"ticker": a["ticker"], "nombre": a["nombre"]})
             continue
-        m = A.metricas(s)
-        mc, det_sim = A.simular(s, rng, args.sims)
-        analogos = {str(h): A.analogo(s, A.pasos(h, m["ppy"])) for h in (7, 30)}
+        try:
+            m = A.metricas(s)
+            mc, det_sim = A.simular(s, rng, args.sims)
+            analogos = {str(h): A.analogo(s, A.pasos(h, m["ppy"])) for h in (7, 30)}
+            estac_a = A.estacionalidad(s)
+        except Exception as e:  # noqa: BLE001 - un activo con datos raros no debe tumbar el informe
+            print(f"[aviso] se omite {a['ticker']}: {e}")
+            sin_datos.append({"ticker": a["ticker"], "nombre": a["nombre"]})
+            continue
         fila = {**{k: a[k] for k in ("id", "ticker", "nombre", "clase", "region", "rankeable")}, **m,
                 "riesgo": A.nivel_riesgo(m["vol"]), "mc": mc,
                 "analogo": {k: (None if v is None else {kk: v[kk] for kk in ("p_sube", "ic_bajo", "ic_alto", "base", "n_ef")})
                             for k, v in analogos.items()},
-                "estac": A.estacionalidad(s)}
+                "estac": estac_a}
         filas.append(fila)
         series[aid] = (s, det_sim, analogos)
 
