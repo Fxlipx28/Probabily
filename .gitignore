@@ -2,3 +2,7 @@ informe-mercado.html
 __pycache__/
 .venv/
 *.pyc
+docs/data/
+salida/
+salida_rapido/
+prev/

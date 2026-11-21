@@ -1,0 +1,38 @@
+name: Actualizar noticias y radar cripto
+
+# Cada 30 minutos lee titulares (RSS públicos) y el radar cripto (CoinGecko, DEX Screener).
+# No usa IA ni instala nada: son unos segundos de Python. Publica en la rama "noticias".
+# GitHub puede retrasar las ejecuciones programadas varios minutos cuando hay mucho tráfico.
+# Para detenerlo: borra este archivo o desactiva el workflow en la pestaña Actions.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar-noticias
+  cancel-in-progress: true
+
+jobs:
+  noticias:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Recolectar noticias y radar
+        run: python -m pipeline.rapido --out salida_rapido
+      - name: Publicar en la rama noticias
+        run: |
+          cd salida_rapido
+          git init -q -b noticias
+          git config user.name "mercado-bot"
+          git config user.email "mercado-bot@users.noreply.github.com"
+          git add -A
+          git commit -qm "Noticias $(date -u +%F\ %H:%M) UTC"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" noticias

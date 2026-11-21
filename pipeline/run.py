@@ -11,9 +11,8 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -25,7 +24,9 @@ from . import data as D
 from . import narrative, portfolio, sessions
 from .universe import CLASES, construir_universo
 
-MAX_INFORMES = 120
+DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre",
+         "octubre", "noviembre", "diciembre"]
 
 
 def limpio(o):
@@ -50,6 +51,26 @@ def escribir(path, obj):
     path.write_text(json.dumps(limpio(obj), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 
+def fecha_es(d):
+    return f"{DIAS[d.weekday()]} {d.day} de {MESES[d.month - 1]}"
+
+
+def manana(chile):
+    """Qué mercados operan mañana (sin considerar feriados)."""
+    d = chile.date() + timedelta(days=1)
+    m = d
+    while m.weekday() >= 5:
+        m += timedelta(days=1)
+    if d.weekday() >= 5:
+        texto = (f"Mañana es {fecha_es(d)}: las bolsas están cerradas y el forex reabre recién a fines de la jornada del domingo. "
+                 f"Solo opera cripto. La próxima sesión de acciones es el {fecha_es(m)}; las probabilidades de acciones, "
+                 f"índices y materias primas corresponden a esa sesión.")
+    else:
+        texto = (f"Mañana es {fecha_es(d)}: abren las bolsas. Las probabilidades de acciones, índices y materias primas "
+                 f"corresponden a la próxima sesión; las de cripto, a las próximas 24 horas.")
+    return {"fecha": d.isoformat(), "proxima_sesion": m.isoformat(), "bolsas_abiertas": d.weekday() < 5, "texto": texto}
+
+
 def detalle_activo(s, fila, detalle_sim, analogos):
     cola = s.iloc[-260:]
     sma50 = s.rolling(50).mean().iloc[-260:]
@@ -63,12 +84,21 @@ def detalle_activo(s, fila, detalle_sim, analogos):
     }
 
 
+def ya_generado(prev, sid, ref):
+    try:
+        d = json.loads(Path(prev).read_text(encoding="utf-8"))
+        return d["sesion"]["id"] == sid and d["sesion"]["ref"] == ref and not d.get("demo")
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--sesion", default="auto")
     ap.add_argument("--demo", action="store_true")
     ap.add_argument("--sims", type=int, default=10000)
     ap.add_argument("--out", default="docs/data")
+    ap.add_argument("--prev", default=None, help="latest.json anterior, para no repetir un informe de la misma sesión")
     ap.add_argument("--force", action="store_true")
     args = ap.parse_args(argv)
 
@@ -90,18 +120,17 @@ def main(argv=None):
     else:
         sid, ref = args.sesion, chile.strftime("%Y-%m-%d")
     nombre_sesion = sessions.info(sid)["nombre"]
-    archivo = f"{ref}_{sid}.json"
-    if args.sesion == "auto" and not args.force and (out / "informes" / archivo).exists():
-        print(f"Ya existe el informe {archivo}. Nada que hacer.")
+    if args.sesion == "auto" and not args.force and args.prev and ya_generado(args.prev, sid, ref):
+        print(f"Ya existe el informe de {sid} para {ref}. Nada que hacer.")
         return 0
     print(f"Generando: {nombre_sesion} ({ref})")
 
     universo = construir_universo()
     df, sin_datos = D.descargar(universo, demo=args.demo)
     if df.empty:
-        print("No se pudo descargar ningún dato. Se mantiene el informe anterior.")
+        print("No se pudo descargar ningún dato. No se publica nada.")
         return 1
-    df = df.where(df > 0)  # precios en cero o negativos (datos malos o futuros en 2020) se tratan como faltantes
+    df = df.where(df > 0)  # precios en cero o negativos (datos malos) se tratan como faltantes
     rng = np.random.default_rng(int(ahora.timestamp()) % (2 ** 32))
     por_id_u = {a["id"]: a for a in universo}
 
@@ -122,8 +151,10 @@ def main(argv=None):
             print(f"[aviso] se omite {a['ticker']}: {e}")
             sin_datos.append({"ticker": a["ticker"], "nombre": a["nombre"]})
             continue
+        tail = s.iloc[-30:]
         fila = {**{k: a[k] for k in ("id", "ticker", "nombre", "clase", "region", "rankeable")}, **m,
                 "riesgo": A.nivel_riesgo(m["vol"]), "mc": mc,
+                "spark": ((tail / tail.iloc[0] - 1) * 100).round(2).tolist(),
                 "analogo": {k: (None if v is None else {kk: v[kk] for kk in ("p_sube", "ic_bajo", "ic_alto", "base", "n_ef")})
                             for k, v in analogos.items()},
                 "estac": estac_a}
@@ -170,38 +201,14 @@ def main(argv=None):
 
     ref_spx = por_ticker.get("^GSPC") or max(filas, key=lambda f: f["fecha"])
     latest = {
-        "version": 1, "demo": bool(args.demo), "generado_utc": ahora.isoformat(timespec="seconds"),
+        "version": 2, "demo": bool(args.demo), "generado_utc": ahora.isoformat(timespec="seconds"),
         "generado_chile": chile.strftime("%d-%m-%Y %H:%M"), "sesion": {"id": sid, "nombre": nombre_sesion, "ref": ref},
         "fecha_datos": ref_spx["fecha"], "n_sims": args.sims, "clases": CLASES, "sin_datos": sin_datos,
-        "tono": tono, "informe": informe, "activos": filas, "rankings": rankings, "alertas": alert,
-        "estacionalidad": estac, "correlaciones": correl, "portafolios": cartera, "calibracion": calib,
-        "fng": ctx["fng"], "funding": ctx["funding"],
+        "manana": manana(chile), "tono": tono, "informe": informe, "activos": filas, "rankings": rankings,
+        "alertas": alert, "estacionalidad": estac, "correlaciones": correl, "portafolios": cartera,
+        "calibracion": calib, "fng": ctx["fng"], "funding": ctx["funding"],
     }
     escribir(out / "latest.json", latest)
-
-    # archivo de informes (resumen liviano)
-    def mini(i):
-        f = por_id[i]
-        return {"id": i, "nombre": f["nombre"], "clase": f["clase"], "score": f["score"], "riesgo": f["riesgo"],
-                "p_sube_1m": f["mc"]["30"]["p_sube"], "vol": f["vol"]}
-    escribir(out / "informes" / archivo, {
-        "sesion": latest["sesion"], "generado_chile": latest["generado_chile"], "demo": latest["demo"],
-        "tono": tono, "informe": informe, "alertas": alert,
-        "rankings": {k: [mini(i) for i in v[:8]] for k, v in rankings.items()}})
-    idx_path = out / "informes" / "indice.json"
-    previo = json.loads(idx_path.read_text(encoding="utf-8")) if idx_path.exists() else []
-    previo = [p for p in previo if p["archivo"] != archivo]
-    if not args.demo:  # al llegar datos reales, se descartan los informes de demostración
-        for p in previo:
-            if p.get("demo"):
-                (out / "informes" / p["archivo"]).unlink(missing_ok=True)
-        previo = [p for p in previo if not p.get("demo")]
-    previo.insert(0, {"archivo": archivo, "titulo": informe["titulo"], "sesion": sid, "tono": tono["valor"],
-                      "generado_chile": latest["generado_chile"], "demo": latest["demo"]})
-    previo.sort(key=lambda p: p["archivo"], reverse=True)
-    for viejo in previo[MAX_INFORMES:]:
-        (out / "informes" / viejo["archivo"]).unlink(missing_ok=True)
-    escribir(idx_path, previo[:MAX_INFORMES])
     print(f"Listo: {len(filas)} activos, {len(sin_datos)} sin datos. Archivos en {out}/")
     return 0
 

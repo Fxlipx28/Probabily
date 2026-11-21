@@ -6,35 +6,39 @@ Página web que lee el mercado mundial (índices, ETFs, acciones de EE.UU., glob
 
 ## Qué muestra
 
-- **Hoy:** termómetro de apetito por riesgo, informe de la sesión, rankings (mayor puntaje, riesgo contenido, menor y mayor riesgo), alertas y mapa del día.
-- **Mercados:** tabla ordenable y filtrable de todos los activos, con probabilidades.
-- **Simulador:** por activo, 10.000 escenarios a 1 mes (40 se dibujan), probabilidad de subir, rango del 90%, pérdida 95% y probabilidad de tocar −10%, más "qué pasó antes en situaciones parecidas".
-- **Estacionalidad:** qué meses suelen ser mejores, por activo.
-- **Correlaciones:** qué activos se mueven juntos (para diversificar).
-- **Portafolio:** reparto mundial de ejemplo por perfil (conservador a agresivo) con simulación conjunta.
-- **Calibración:** prueba de qué tan buenas han sido las probabilidades en el pasado. Revísala antes de pensar en automatizar.
-- **Informes:** historial de informes por sesión.
+- **Hoy:** termómetro de apetito por riesgo, resumen de mañana, rankings, últimas noticias, alertas y mapa del día.
+- **Mañana:** probabilidad de que suba y de que baje cada activo (1 día, 1 semana, 1 mes), con consulta rápida por activo.
+- **Noticias:** titulares de fuentes públicas etiquetados por activo y tema, con tono (positivo/negativo) por palabras clave.
+- **Radar cripto:** mayores subidas y caídas, tendencias, volumen anormal y tokens nuevos en DEX (con advertencia de riesgo).
+- **Mercados / Simulador / Estacionalidad / Correlaciones / Portafolio / Calibración:** análisis por activo y por cartera.
+- **Mi lista:** activos favoritos guardados en el navegador. **Cuenta:** reservado para el futuro inicio de sesión.
 
-## Cuándo se actualiza
+Cubre ~220 activos: índices, ETFs, acciones de EE.UU., globales y chilenas, salmoneras, materias primas, bonos, divisas, cripto, cripto nuevas y memecoins.
 
-GitHub Actions (`.github/workflows/actualizar.yml`) corre hasta 100 minutos antes de la apertura de:
+## Cómo se mantiene al día (sin gastar tokens de IA)
 
-| Sesión | Apertura |
-|---|---|
-| Tokio | 09:00 JST |
-| Europa | 09:00 hora de Fráncfort |
-| Santiago | 09:30 hora de Chile |
-| Nueva York | 09:30 hora de Nueva York |
+Todo lo hacen programas normales en GitHub Actions; la página solo lee archivos ya listos.
 
-Además hay un informe tras el cierre de Wall Street y uno cripto los fines de semana. Considera el horario de verano de cada país. No considera feriados bursátiles.
+| Qué | Cada cuánto | Workflow | Rama donde se publica |
+|---|---|---|---|
+| Informe completo (precios, simulaciones, probabilidades) | Antes de abrir Tokio, Europa, Santiago y Nueva York, tras el cierre de Wall Street, y fines de semana cripto | `actualizar.yml` | `datos` |
+| Noticias y radar cripto | Cada 30 minutos | `noticias.yml` | `noticias` |
+| Revisión en tu navegador | Cada 5 minutos | `docs/app.js` | — |
+| Precio de cripto en vivo | Continuo (WebSocket de Binance) | `docs/app.js` | — |
+
+Las ramas `datos` y `noticias` se reescriben en cada ejecución (sin historial), así el repositorio no crece. La dirección de lectura está en `docs/config.js`.
+
+Para detener todo: borra los dos archivos de `.github/workflows/` o desactívalos en la pestaña Actions.
 
 ## Puesta en marcha
 
-1. **Activar la página:** en GitHub, `Settings → Pages → Build and deployment → Deploy from a branch → main → /docs`.
-2. **Primer informe real:** pestaña `Actions → Actualizar informe de mercado → Run workflow` (deja `manual`). Tarda unos minutos y reemplaza los datos de demostración.
+1. **Activar la página:** `Settings → Pages → Deploy from a branch → main → /docs`.
+2. **Primer informe real:** `Actions → Actualizar informe de mercado → Run workflow` (deja `manual`), y lo mismo con `Actualizar noticias y radar cripto`.
 3. La página queda en `https://<tu-usuario>.github.io/Proyecto-1/`.
 
-Nota: GitHub desactiva los workflows programados si el repositorio no tiene actividad por 60 días; se reactivan a mano en la pestaña Actions.
+GitHub puede retrasar varios minutos las ejecuciones programadas y desactiva los workflows de un repositorio sin actividad por 60 días (se reactivan a mano).
+
+Hacia un producto público (cuentas, planes, licencias de datos): ver `PRODUCTO.md`.
 
 ## Correr en tu computador
 
@@ -42,6 +46,7 @@ Nota: GitHub desactiva los workflows programados si el repositorio no tiene acti
 pip install -r requirements.txt
 python -m pipeline.run --sesion manual        # datos reales
 python -m pipeline.run --demo --sesion manual # datos falsos, sin internet
+python -m pipeline.rapido                      # noticias y radar (necesita internet)
 cd docs
 python -m http.server 8000                    # abrir http://localhost:8000
 ```
@@ -76,7 +81,7 @@ No está implementado a propósito. Antes de hacerlo:
 
 ```
 pipeline/   motor en Python (datos, simulación, puntaje, informe, sesiones)
-docs/       la página web (HTML, CSS, JS) y docs/data con los datos generados
+docs/       la página web (HTML, CSS, JS); los datos se publican en las ramas `datos` y `noticias`
 .github/    actualización automática
 tests/      pruebas
 mercado.py  script simple de informe local (primera versión)

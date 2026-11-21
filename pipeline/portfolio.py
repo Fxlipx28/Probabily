@@ -13,7 +13,7 @@ PERFILES = {
     "Crecimiento": {"Bonos": 10, "ETFs": 25, "Acciones EE.UU.": 20, "Acciones globales": 12, "Chile": 8,
                     "Salmoneras": 5, "Materias primas": 8, "Cripto": 10, "Memecoins": 2},
     "Agresivo": {"ETFs": 15, "Acciones EE.UU.": 25, "Acciones globales": 15, "Chile": 8, "Salmoneras": 7,
-                 "Materias primas": 5, "Cripto": 18, "Memecoins": 7},
+                 "Materias primas": 5, "Cripto": 14, "Cripto nuevas": 4, "Memecoins": 7},
 }
 K_POR_CLASE = {"Memecoins": 2}
 MIN_SEMANAS = 150
