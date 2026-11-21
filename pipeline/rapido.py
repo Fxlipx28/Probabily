@@ -13,6 +13,7 @@ import html
 import json
 import re
 import sys
+import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -37,21 +38,22 @@ def _gn(consulta, es=True):
 FEEDS = [
     ("Mercados", "Yahoo Finance", "https://finance.yahoo.com/news/rssindex"),
     ("Mercados", "CNBC", "https://www.cnbc.com/id/100003114/device/rss/rss.html"),
+    ("Mercados", "Investing.com", "https://www.investing.com/rss/news.rss"),
     ("Mercados", "MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_marketpulse"),
-    ("Mercados", "Google News", _gn("bolsas Wall Street mercados acciones")),
+    ("Mercados", "Google News", _gn("Wall Street OR bolsas OR acciones mercados")),
     ("Economía y bancos centrales", "CNBC", "https://www.cnbc.com/id/20910258/device/rss/rss.html"),
     ("Economía y bancos centrales", "Google News", _gn("Reserva Federal inflación tasas de interés")),
     ("Tecnología y empresas", "CNBC", "https://www.cnbc.com/id/19854910/device/rss/rss.html"),
-    ("Tecnología y empresas", "Google News", _gn("Nvidia Apple Microsoft Tesla resultados", es=False)),
+    ("Tecnología y empresas", "Google News", _gn("Nvidia OR Apple OR Microsoft OR Tesla OR Amazon", es=False)),
     ("Cripto", "CoinDesk", "https://www.coindesk.com/arc/outboundfeeds/rss/"),
     ("Cripto", "Cointelegraph", "https://cointelegraph.com/rss"),
     ("Cripto", "Decrypt", "https://decrypt.co/feed"),
     ("Cripto", "Google News", _gn("bitcoin ethereum criptomonedas")),
-    ("Energía y materias primas", "Google News", _gn("petróleo OPEP oro cobre precio")),
+    ("Energía y materias primas", "Google News", _gn("petróleo OR OPEP OR cobre OR \"precio del oro\"")),
     ("Chile y Latam", "Google News", _gn("bolsa de Santiago IPSA dólar Chile")),
     ("Chile y Latam", "Google News", _gn("Banco Central de Chile economía chilena")),
-    ("Salmón y alimentos", "Google News", _gn("salmón salmonicultura precio Mowi Camanchaca")),
-    ("Asia y Europa", "Google News", _gn("Nikkei Hang Seng DAX bolsas Asia Europa")),
+    ("Salmón y alimentos", "Google News", _gn("salmón OR salmonicultura OR Mowi OR Camanchaca")),
+    ("Asia y Europa", "Google News", _gn("Nikkei OR DAX OR \"Hang Seng\" OR \"bolsas de Asia\"")),
 ]
 
 # patrón -> ticker (solo se usa si el activo existe en el universo)
@@ -97,10 +99,19 @@ _TEMAS_RE = [(re.compile(p, re.I), n) for p, n in TEMAS]
 _POS_RE, _NEG_RE = re.compile(r"(?<!\w)(?:" + POS + r")(?!\w)", re.I), re.compile(r"(?<!\w)(?:" + NEG + r")(?!\w)", re.I)
 
 
-def fetch(url, timeout=15):
-    req = urllib.request.Request(url, headers=UA)
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read()
+def fetch(url, timeout=15, intentos=2):
+    """Descarga con un reintento (las fuentes gratuitas fallan a ratos)."""
+    ultimo = None
+    for i in range(intentos):
+        try:
+            req = urllib.request.Request(url, headers=UA)
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read()
+        except Exception as e:  # noqa: BLE001
+            ultimo = e
+            if i + 1 < intentos:
+                time.sleep(2)
+    raise ultimo
 
 
 def _fecha(s):
@@ -175,7 +186,7 @@ def recolectar_noticias(ahora=None, descargar=fetch):
     for categoria, fuente, url in FEEDS:
         try:
             items = parsear_feed(descargar(url), categoria, fuente)[:30]
-            (ok if items else error).append(f"{categoria} · {fuente}")
+            (ok if items else error).append(f"{categoria} · {fuente}" + ("" if items else " (sin titulares)"))
             crudas += items
         except Exception as e:  # noqa: BLE001
             error.append(f"{categoria} · {fuente} ({type(e).__name__})")

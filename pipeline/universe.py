@@ -241,7 +241,6 @@ _FILAS = {
         ("RENDER-USD", "Render", "Cripto", ""),
         ("TAO22974-USD", "Bittensor", "Cripto", ""),
         ("SEI-USD", "Sei", "Cripto", ""),
-        ("TIA22861-USD", "Celestia", "Cripto", ""),
         ("STX4847-USD", "Stacks", "Cripto", ""),
         ("WLD-USD", "Worldcoin", "Cripto", ""),
     ],
