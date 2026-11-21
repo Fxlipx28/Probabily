@@ -223,3 +223,24 @@ details.card summary{font-weight:700;color:var(--tx)}
 .inflist .it{color:var(--mut,#aab2bd)}
 .chips2{display:flex;flex-wrap:wrap;gap:5px}
 .chips2>span{background:rgba(255,255,255,.05);border-radius:6px;padding:3px 8px;font-size:12.5px;color:var(--mut,#aab2bd)}
+
+/* resumen visual */
+.rsm{display:flex;flex-direction:column;gap:9px;flex:1;justify-content:space-between}
+.rs{border-left:3px solid #e5b94e;padding:2px 0 2px 10px}
+.rs .rl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#e5b94e}
+.rs .rt{font-size:13px;line-height:1.4;color:var(--mut);margin-top:2px}
+.rs .rt b{color:var(--tx);font-weight:700}
+.rbar{height:5px;border-radius:3px;background:rgba(255,255,255,.07);margin-top:6px;overflow:hidden}
+.rbar i{display:block;height:100%;border-radius:3px}
+.rbar i.up{background:var(--up)}.rbar i.dn{background:var(--dn)}.rbar i.wn{background:var(--warn)}
+.inflist .ih{display:flex;justify-content:space-between;align-items:baseline}
+.inflist .big{font-size:22px;font-weight:800;color:var(--tx)}
+.inflist .rbar{margin:0 0 8px}
+.inflist li.ii{display:flex;flex-direction:column}
+
+.als{display:flex;flex-direction:column;gap:8px;flex:1;justify-content:space-between}
+.al{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:8px;padding:8px 10px;text-decoration:none;color:var(--tx)}
+.al .an{font-weight:700;font-size:13.5px;display:flex;flex-direction:column}
+.al .an small{font-weight:500;font-size:11.5px;color:var(--mut);margin-top:1px}
+.al .ap{font-weight:800;font-size:15px;white-space:nowrap}
+.ap.up{color:var(--up)}.ap.dn{color:var(--dn)}

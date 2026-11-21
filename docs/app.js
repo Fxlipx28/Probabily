@@ -249,8 +249,8 @@ function vHoy() {
   const top5 = (dir) => [...rk_].sort((x, y) => dir * (y.mc['1'].p_sube - x.mc['1'].p_sube)).slice(0, 5);
   h += `<div class="grid3 eq">
     <div class="card sm glow"><div class="fill">${gauge(tg, true)}</div></div>
-    <div class="card sm"><h2>Resumen</h2><div class="fill"><ul class="tight">${d.informe.resumen.slice(0, 3).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>
-    <div class="card sm"><h2>Alertas</h2><div class="fill">${d.alertas.length ? `<ul class="tight">${d.alertas.slice(0, 4).map(x => `<li><a href="#sim/${x.id}">${esc(x.texto)}</a></li>`).join('')}</ul>` : '<p class="muted">Sin alertas.</p>'}</div></div></div>
+    <div class="card sm"><h2>Resumen</h2><div class="fill">${resumenHTML(d.informe.resumen)}</div></div>
+    <div class="card sm"><h2>Alertas</h2><div class="fill">${d.alertas.length ? alertasHTML(d.alertas.slice(0, 4)) : '<p class="muted">Sin alertas.</p>'}</div></div></div>
   <div class="grid2 eq">
     <div class="card sm glow"><h2>Mañana en una mirada <span class="sub">prob. a 1 día</span></h2>
       <div class="grid2 in fill"><div><h3 class="pos">▲ Suben</h3>${top5(1).map(a => rk(a, pc0(a.mc['1'].p_sube))).join('')}</div><div><h3 class="neg">▼ Bajan</h3>${top5(-1).map(a => rk(a, pc0(1 - a.mc['1'].p_sube))).join('')}</div></div>
@@ -269,6 +269,25 @@ function vHoy() {
   const ligarInf = () => $$('[data-inf]').forEach(c => c.onclick = () => { S.inf = +c.dataset.inf; $('#infb').innerHTML = informeHTML(); ligarInf(); });
   ligarInf();
 }
+function alertasHTML(l) {
+  return `<div class="als">${l.map(x => {
+    const t = String(x.texto), m = t.match(/^(.*?) se movió ([+\-−]?\d+(?:[.,]\d+)?)%/), k = t.match(/más de (\d+) veces/);
+    if (!m) return `<a class="al" href="#sim/${x.id}"><span class="an">${esc(t)}</span></a>`;
+    const v = parseFloat(m[2].replace(',', '.'));
+    return `<a class="al" href="#sim/${x.id}"><span class="an">${esc(m[1])}<small>${k ? 'más de ' + k[1] + '× lo normal en 1 día' : 'movimiento inusual en 1 día'}</small></span><span class="ap ${v >= 0 ? 'up' : 'dn'}">${v >= 0 ? '+' : ''}${m[2].replace('-', '−')}%</span></a>`;
+  }).join('')}</div>`;
+}
+function resumenHTML(res) {
+  const fr = res.join(' ').split(/\.\s+(?=[A-ZÁÉÍÓÚ])/).map(s => s.replace(/\.$/, '')).filter(Boolean).slice(0, 4);
+  const num = t => { let m = t.match(/\((\d+)\/100\)/) || t.match(/(?:subir|alcista)\D{0,12}?(\d+)%/) || t.match(/^[^:]*:\s*(\d+)%/); return m ? +m[1] : null; };
+  const cl = v => v >= 60 ? 'up' : v <= 40 ? 'dn' : 'wn';
+  return `<div class="rsm">${fr.map(s => {
+    const m = s.match(/^([^:]{2,30}):\s+(.*)$/) || s.match(/^(.{2,24}?)\s+(?:está|en)\s+(.*)$/), lab = m ? m[1] : s.split(' ').slice(0, 2).join(' '), txt = m ? m[2] : s;
+    const v = num(txt) ?? num(s);
+    const t = esc(txt).replace(/(\d+(?:[.,]\d+)?(?:\/100|%)?)/g, '<b>$1</b>');
+    return `<div class="rs"><div class="rl">${esc(lab)}</div><div class="rt">${t}</div>${v !== null ? `<div class="rbar"><i class="${cl(v)}" style="width:${Math.min(100, v)}%"></i></div>` : ''}</div>`;
+  }).join('')}</div>`;
+}
 const INF_CORTO = ['Qué mirar', 'Más atractivo', 'Buen puntaje, bajo riesgo', 'Riesgo', 'Cripto', 'Confiabilidad', 'Límites'];
 const INF_ICO = ['👁', '⭐', '⚖️', '⚠️', '₿', '🎯', 'ℹ️'];
 function infItem(x) {
@@ -277,7 +296,9 @@ function infItem(x) {
   const col = t => esc(t).replace(/([+\-−]\d+(?:[.,]\d+)?%)/g, (q) => `<span class="${/^\+/.test(q) ? 'pos' : 'neg'}">${q}</span>`).replace(/(\d+\/100)/g, '<b>$1</b>');
   if (!m) return `<li>${col(x)}</li>`;
   const partes = m[2].split(/;\s+|,\s+(?=probabilidad|riesgo|tendencia)|\.\s+(?=[A-ZÁÉÍÓÚ])/).filter(Boolean);
-  return `<li class="ii"><b class="ih">${esc(m[1])}</b>${partes.length > 1 ? `<div class="chips2">${partes.map(p => `<span>${col(p.replace(/\.$/, ''))}</span>`).join('')}</div>` : `<span class="it">${col(m[2])}</span>`}</li>`;
+  const pj = x.match(/puntaje (\d+)\/100/), pr = x.match(/subir en un mes (\d+)%/);
+  const bar = pj ? `<div class="rbar"><i class="${+pj[1] >= 70 ? 'up' : +pj[1] >= 40 ? 'wn' : 'dn'}" style="width:${pj[1]}%"></i></div>` : '';
+  return `<li class="ii"><b class="ih">${esc(m[1])}${pj ? `<span class="big">${pj[1]}</span>` : ''}</b>${bar}${partes.length > 1 ? `<div class="chips2">${partes.map(p => `<span>${col(p.replace(/\.$/, ''))}</span>`).join('')}</div>` : `<span class="it">${col(m[2])}</span>`}</li>`;
 }
 function informeHTML() {
   const sec = S.d.informe.secciones, k = Math.min(S.inf || 0, sec.length - 1), s = sec[k];
