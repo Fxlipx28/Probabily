@@ -295,6 +295,12 @@ function resumenHTML(res) {
       v = Math.max(8, Math.abs(n) * 6); c = n < 0 ? 'dn' : 'up';
       t2 = `Cotiza <b>${Math.abs(n).toFixed(1).replace('.', ',')}%</b> ${n < 0 ? 'bajo' : 'sobre'} su media de 200 días` + (q ? ` · <b>${price(q.precio)}</b> (<span class="${q.d1 >= 0 ? 'pos' : 'neg'}">${pct(q.d1, 1)}</span> hoy)` : '');
       ex = n < 0 ? 'Bajo la media de 200 días suele indicar tendencia de largo plazo debilitada.' : 'Sobre la media de 200 días suele indicar tendencia de largo plazo sana.'; }
+    if (!ex) {
+      if (/tono/i.test(lab)) ex = 'Resume el ánimo general: 0 = miedo extremo, 100 = apetito por riesgo.';
+      else if (/amplitud/i.test(lab)) ex = 'Qué parte del mercado sube de verdad. Bajo 30% = pocos activos sostienen la tendencia.';
+      else if (/probabilidad|subir/i.test(txt)) ex = 'Probabilidad simulada (10.000 escenarios) de que cierre al alza el próximo día. 50% = cara o sello.';
+      else ex = 'Dato complementario del informe de hoy.';
+    }
     const t = esc(txt).replace(/(\d+(?:[.,]\d+)?(?:\/100|%)?)/g, '<b>$1</b>');
     return `<div class="rs"><div class="rl">${esc(lab)}</div><div class="rt">${t2 || t}</div>${ex ? `<div class="rx">${ex}</div>` : ''}${v !== null ? `<div class="rbar"><i class="${c || cl(v)}" style="width:${Math.min(100, v)}%"></i></div>` : ''}</div>`;
   }).join('')}</div>`;
