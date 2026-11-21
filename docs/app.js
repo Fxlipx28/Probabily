@@ -245,17 +245,19 @@ function vHoy() {
   const tg = d.tono;
   let h = `<div class="hero sm"><span class="kick">Panel del mercado</span><h1>Hoy y <span class="grad">mañana</span></h1><p>${esc(d.manana.texto)}</p></div>`;
   h += `<div class="kpis sm">${kp.map(a => `<a class="kpi" href="#sim/${a.id}"><small>${esc(a.nombre)}</small><b data-live="${a.id}">${price(a.precio)}</b><span class="c ${cls(a.d1)}">${pct(a.d1, 2)}</span>${spark(a.spark, 56, 22)}</a>`).join('')}</div>`;
-  const rkc = (t, l, tipo) => `<div class="card sm"><h2>${t}</h2>${l.map(a => rk(a, tipo)).join('')}</div>`;
-  h += `<div class="masonry">
-    <div class="card sm glow">${gauge(tg, true)}</div>
+  const rkc = (t, l, tipo) => `<div class="card sm"><h2>${t}</h2><div class="fill">${l.map(a => rk(a, tipo)).join('')}</div></div>`;
+  const top5 = (dir) => [...rk_].sort((x, y) => dir * (y.mc['1'].p_sube - x.mc['1'].p_sube)).slice(0, 5);
+  h += `<div class="grid3 eq">
+    <div class="card sm glow"><div class="fill">${gauge(tg, true)}</div></div>
+    <div class="card sm"><h2>Resumen</h2><div class="fill"><ul class="tight">${d.informe.resumen.slice(0, 3).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>
+    <div class="card sm"><h2>Alertas</h2><div class="fill">${d.alertas.length ? `<ul class="tight">${d.alertas.slice(0, 4).map(x => `<li><a href="#sim/${x.id}">${esc(x.texto)}</a></li>`).join('')}</ul>` : '<p class="muted">Sin alertas.</p>'}</div></div></div>
+  <div class="grid2 eq">
     <div class="card sm glow"><h2>Mañana en una mirada <span class="sub">prob. a 1 día</span></h2>
-      <h3 class="pos">▲ Más probable que suban</h3>${top('1', 1).map(a => rk(a, pc0(a.mc['1'].p_sube))).join('')}
-      <h3 class="neg">▼ Más probable que bajen</h3>${top('1', -1).map(a => rk(a, pc0(1 - a.mc['1'].p_sube))).join('')}
+      <div class="grid2 in fill"><div><h3 class="pos">▲ Suben</h3>${top5(1).map(a => rk(a, pc0(a.mc['1'].p_sube))).join('')}</div><div><h3 class="neg">▼ Bajan</h3>${top5(-1).map(a => rk(a, pc0(1 - a.mc['1'].p_sube))).join('')}</div></div>
       <div class="btns"><a class="btn pri" href="#manana">Ver todos →</a></div></div>
-    <div class="card sm"><h2>Resumen</h2><ul class="tight">${d.informe.resumen.slice(0, 3).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
-    <div class="card sm"><h2>Últimas noticias <span class="sub">${S.r ? ago(S.r.generado_utc) : ''}</span></h2>${S.r && S.r.noticias.length ? S.r.noticias.slice(0, 7).map(n => `<a class="nrow" href="${esc(safeUrl(n.enlace))}" target="_blank" rel="noopener noreferrer"><span class="src">${esc(n.fuente)}</span>${esc(n.titulo)}</a>`).join('') + '<div class="btns"><a class="btn" href="#noticias">Ver todas →</a></div>' : '<p class="muted">Sin noticias aún.</p>'}</div>
-    <div class="card sm"><h2>Alertas</h2>${d.alertas.length ? `<ul class="tight">${d.alertas.slice(0, 5).map(x => `<li><a href="#sim/${x.id}">${esc(x.texto)}</a></li>`).join('')}</ul>` : '<p class="muted">Sin alertas.</p>'}</div>
-    ${rkc('Mayor puntaje', d.rankings.atractivo.slice(0, 4).map(act).filter(Boolean), 'score')}
+    <div class="card sm"><h2>Últimas noticias <span class="sub">${S.r ? ago(S.r.generado_utc) : ''}</span></h2><div class="fill">${S.r && S.r.noticias.length ? S.r.noticias.slice(0, 5).map(n => `<a class="nrow" href="${esc(safeUrl(n.enlace))}" target="_blank" rel="noopener noreferrer"><span class="src">${esc(n.fuente)}</span>${esc(n.titulo)}</a>`).join('') : '<p class="muted">Sin noticias aún.</p>'}</div>
+      <div class="btns"><a class="btn" href="#noticias">Ver todas →</a></div></div></div>
+  <div class="grid4 eq">${rkc('Mayor puntaje', d.rankings.atractivo.slice(0, 4).map(act).filter(Boolean), 'score')}
     ${rkc('Puntaje y riesgo contenido', d.rankings.mejor_ajustado.slice(0, 4).map(act).filter(Boolean), 'score')}
     ${rkc('Menor riesgo', d.rankings.menor_riesgo.slice(0, 4).map(act).filter(Boolean), 'vol')}
     ${rkc('Mayor riesgo', d.rankings.mayor_riesgo.slice(0, 4).map(act).filter(Boolean), 'vol')}</div>`;
