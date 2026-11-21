@@ -165,3 +165,5 @@ a.pill:hover{background:rgba(229,185,78,.2);color:#fff}
 .cat{background:rgba(229,185,78,.18);color:#e5b94e;padding:1px 8px;border-radius:99px;font-weight:700;font-size:11px}
 details{margin:6px 0}summary{cursor:pointer;color:var(--cy);font-weight:600}
 .lock{opacity:.55;pointer-events:none}
+.cv.tv{height:520px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+@media(max-width:860px){.cv.tv{height:420px}}

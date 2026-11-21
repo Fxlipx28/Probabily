@@ -45,6 +45,17 @@ async function getJSON(rel, bases = BASES) {
   throw err;
 }
 
+
+// ---------------------------------------------------------------- analítica (opcional, sin cookies; se activa en config.js)
+(function analitica() {
+  const A = CFG.analytics || {};
+  const add = (src, attrs) => { const s = document.createElement('script'); s.defer = true; s.src = src; Object.entries(attrs || {}).forEach(([k, v]) => s.setAttribute(k, v)); document.head.appendChild(s); };
+  if (LOCAL) return;
+  if (A.plausible) add('https://plausible.io/js/script.hash.js', {'data-domain': A.plausible});
+  if (A.goatcounter) add('https://gc.zgo.at/count.js', {'data-goatcounter': `https://${A.goatcounter}.goatcounter.com/count`, 'data-goatcounter-settings': '{"no_onload":true}'});
+  window.__vista = v => { try { if (A.goatcounter && window.goatcounter && window.goatcounter.count) window.goatcounter.count({path: '/' + v, title: v}); } catch (e) { /* sin analítica */ } };
+})();
+
 // ---------------------------------------------------------------- iconos / navegación
 const IC = {
   hoy: 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10',
@@ -165,6 +176,7 @@ function ruta(keep) {
   kill();
   const [vista, arg] = (location.hash.slice(1) || 'hoy').split('/');
   S.vista = vista;
+  if (!keep && window.__vista) window.__vista(vista);
   $$('#nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + vista));
   const V = {hoy: vHoy, manana: vManana, noticias: vNoticias, radar: vRadar, mercados: vMercados, sim: vSim, estac: vEstac, corr: vCorr, port: vPort, calib: vCalib, lista: vLista, cuenta: vCuenta, metodo: vMetodo};
   (V[vista] || vHoy)(arg);
@@ -369,6 +381,39 @@ function vMercados() {
   draw();
 }
 
+
+// ---------------------------------------------------------------- TradingView (un solo gráfico, el del activo abierto)
+const TV_IDX = {'^GSPC': 'SP:SPX', '^IXIC': 'NASDAQ:IXIC', '^DJI': 'DJ:DJI', '^RUT': 'TVC:RUT', '^VIX': 'CBOE:VIX', '^FTSE': 'TVC:UKX', '^GDAXI': 'XETR:DAX', '^FCHI': 'TVC:CAC40',
+  '^STOXX50E': 'TVC:SX5E', '^N225': 'TVC:NI225', '^HSI': 'TVC:HSI', '^KS11': 'TVC:KOSPI', '^BVSP': 'BMFBOVESPA:IBOV', '^AXJO': 'ASX:XJO', '000001.SS': 'SSE:000001', '^BSESN': 'BSE:SENSEX',
+  '^NSEI': 'NSE:NIFTY', '^TWII': 'TWSE:TAIEX', '^IBEX': 'BME:IBC', '^GSPTSE': 'TSX:TSX', '^TNX': 'TVC:US10Y', 'DX-Y.NYB': 'TVC:DXY', 'BRK-B': 'NYSE:BRK.B',
+  'GC=F': 'COMEX:GC1!', 'SI=F': 'COMEX:SI1!', 'HG=F': 'COMEX:HG1!', 'PL=F': 'NYMEX:PL1!', 'CL=F': 'NYMEX:CL1!', 'BZ=F': 'NYMEX:BZ1!', 'NG=F': 'NYMEX:NG1!', 'ZW=F': 'CBOT:ZW1!',
+  'ZC=F': 'CBOT:ZC1!', 'ZS=F': 'CBOT:ZS1!', 'KC=F': 'ICEUS:KC1!', 'CC=F': 'ICEUS:CC1!', 'SB=F': 'ICEUS:SB1!', 'ES=F': 'CME_MINI:ES1!', 'NQ=F': 'CME_MINI:NQ1!'};
+function tvSymbol(a) {
+  const t = a.ticker;
+  if (TV_IDX[t]) return TV_IDX[t];
+  let m;
+  if ((m = t.match(/^([A-Z]+)\d*-USD$/))) return `BINANCE:${m[1]}USDT`;
+  if ((m = t.match(/^([A-Z]{6})=X$/))) return `FX_IDC:${m[1]}`;
+  if ((m = t.match(/^(.+)\.SN$/))) return `BCS:${m[1]}`;
+  if ((m = t.match(/^(.+)\.OL$/))) return `OSL:${m[1]}`;
+  if ((m = t.match(/^(\d+)\.KS$/))) return `KRX:${m[1]}`;
+  if ((m = t.match(/^0*(\d+)\.HK$/))) return `HKEX:${m[1]}`;
+  if ((m = t.match(/^(.+)\.NS$/))) return `NSE:${m[1]}`;
+  return t.replace(/^\^/, '');
+}
+function montarTV(a) {
+  const box = document.getElementById('tvbox'); if (!box || CFG.tradingview === false) return;
+  const sym = tvSymbol(a);
+  box.innerHTML = '<div class="tradingview-widget-container" style="height:100%;width:100%"><div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div></div>';
+  const s = document.createElement('script');
+  s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  s.async = true;
+  s.text = JSON.stringify({autosize: true, symbol: sym, interval: 'D', timezone: 'America/Santiago', theme: 'dark', style: '1', locale: 'es', backgroundColor: 'rgba(20,23,28,1)',
+    gridColor: 'rgba(255,255,255,0.05)', allow_symbol_change: true, hide_side_toolbar: false, calendar: false, support_host: 'https://www.tradingview.com'});
+  box.firstChild.appendChild(s);
+  const l = document.getElementById('tvlink'); if (l) l.href = 'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(sym);
+}
+
 // ---------------------------------------------------------------- SIMULADOR
 async function vSim(id) {
   const d = S.d;
@@ -399,6 +444,7 @@ async function vSim(id) {
       <div class="kpi"><small>Tendencia · RSI</small><b class="t-${a.tendencia}">${a.tendencia} · ${nf(a.rsi, 0)}</b></div>
       <div class="kpi"><small>Puntaje (0-100)</small><b>${a.score == null ? '—' : nf(a.score, 0)}</b></div>
     </div>
+    ${CFG.tradingview === false ? '' : `<h3>Gráfico en vivo <span class="tag">TradingView · puedes cambiar indicadores, zoom y escala</span></h3><div class="cv tv" id="tvbox"></div><p class="muted" style="font-size:12.5px;margin:6px 0 0">Gráfico de TradingView. Si no carga o el símbolo no coincide, <a id="tvlink" target="_blank" rel="noopener noreferrer" style="color:var(--warn)">ábrelo en TradingView ↗</a>.</p>`}
     <h3>Probabilidades de subir y bajar</h3>${mqCard(a)}
     <h3>${d.n_sims.toLocaleString('es-CL')} escenarios posibles a un mes</h3>
     <p class="muted" style="margin-top:0">Cada línea tenue es uno de 40 escenarios simulados. La banda cubre el 90% de los casos (clara) y el 50% central (oscura); la línea amarilla es el caso del medio. El eje horizontal son días de mercado.</p>
@@ -414,6 +460,7 @@ async function vSim(id) {
     <div><h3>Estacionalidad (retorno mensual promedio)</h3><div class="cv s"><canvas id="se"></canvas></div></div></div>
     ${comp ? `<h3>De qué se compone el puntaje</h3>${comp}` : ''}`;
   Object.keys(S.live).forEach(pintarVivo);
+  montarTV(a);
   const lab = [...Array(sim.pasos + 1).keys()], B = sim.bandas;
   const ds = sim.caminos.map(c => ({data: c, borderColor: 'rgba(160,170,190,.16)', borderWidth: 1, pointRadius: 0}));
   ds.push({data: B.p5, borderColor: 'rgba(0,0,0,0)', pointRadius: 0});

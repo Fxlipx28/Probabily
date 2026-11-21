@@ -86,3 +86,16 @@ docs/       la página web (HTML, CSS, JS); los datos se publican en las ramas `
 tests/      pruebas
 mercado.py  script simple de informe local (primera versión)
 ```
+
+## Contar visitas (sin cookies)
+
+En `docs/config.js`, dentro de `analytics`, completa **uno**:
+
+- **GoatCounter (gratis):** crea una cuenta en goatcounter.com, elige un código (por ejemplo `probability`) y escríbelo en `goatcounter`. Ves las visitas en `https://TU-CODIGO.goatcounter.com`.
+- **Plausible (de pago, 30 días de prueba):** registra el dominio en plausible.io y escribe ese dominio en `plausible`.
+
+No usan cookies ni guardan datos personales. En tu computador (localhost) no cuentan.
+
+## Gráfico de TradingView
+
+El Simulador carga un solo gráfico: el del activo que tienes abierto. Cambia el símbolo automáticamente (`tvSymbol` en `docs/app.js`). Si algún activo no coincide, se puede cambiar dentro del mismo gráfico o abrir en TradingView. Para quitarlo: `tradingview: false` en `config.js`.
