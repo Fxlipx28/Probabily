@@ -30,7 +30,6 @@ _FILAS = {
         ("^FTSE", "FTSE 100", "Reino Unido", ""),
         ("^FCHI", "CAC 40", "Francia", ""),
         ("^STOXX50E", "Euro Stoxx 50", "Eurozona", ""),
-        ("^IPSA", "IPSA", "Chile", "core"),
         ("^BVSP", "Bovespa", "Brasil", ""),
         ("^MXX", "IPC México", "México", ""),
     ],
@@ -46,6 +45,7 @@ _FILAS = {
         ("XLU", "Servicios públicos EE.UU.", "EE.UU.", "core"),
         ("XLP", "Consumo básico EE.UU.", "EE.UU.", ""),
         ("VNQ", "Inmobiliario EE.UU.", "EE.UU.", "core"),
+        ("ECH", "Chile (ETF iShares MSCI Chile, referencia del IPSA)", "Chile", "core"),
     ],
     "Acciones EE.UU.": [
         ("NVDA", "Nvidia", "EE.UU.", "core"),
@@ -139,7 +139,6 @@ _FILAS = {
         ("SHIB-USD", "Shiba Inu", "Cripto", ""),
         ("PEPE24478-USD", "Pepe", "Cripto", ""),
         ("FLOKI-USD", "Floki", "Cripto", ""),
-        ("BONK24478-USD", "Bonk", "Cripto", ""),
     ],
     "Indicadores": [
         ("^VIX", "VIX (índice del miedo)", "EE.UU.", ""),

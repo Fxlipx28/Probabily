@@ -12,12 +12,12 @@ SESIONES = {
     "tokio": {"nombre": "Pre-apertura Tokio", "tz": "Asia/Tokyo", "hora": time(9, 0),
               "foco": ["^N225", "^HSI", "000001.SS", "^AXJO", "^KS11"]},
     "santiago": {"nombre": "Pre-apertura Santiago", "tz": "America/Santiago", "hora": time(9, 30),
-                 "foco": ["^IPSA", "USDCLP=X", "HG=F", "SQM-B.SN"]},
+                 "foco": ["ECH", "USDCLP=X", "HG=F", "SQM-B.SN"]},
 }
 EXTRA = {
     "cierre": {"nombre": "Cierre de Wall Street y perspectiva", "foco": ["^GSPC", "^IXIC", "^VIX", "BTC-USD", "GC=F", "CL=F"]},
     "cripto": {"nombre": "Informe cripto de fin de semana", "foco": ["BTC-USD", "ETH-USD", "SOL-USD", "DOGE-USD"]},
-    "manual": {"nombre": "Informe manual", "foco": ["^GSPC", "^IXIC", "BTC-USD", "GC=F", "CL=F", "^IPSA"]},
+    "manual": {"nombre": "Informe manual", "foco": ["^GSPC", "^IXIC", "BTC-USD", "GC=F", "CL=F", "ECH"]},
 }
 PRIORIDAD = ["nueva_york", "europa", "tokio", "santiago", "cierre", "cripto"]
 VENTANA_ANTES_MIN = 100     # se informa hasta 100 min antes de la apertura
