@@ -190,3 +190,5 @@ ul.tight{margin:2px 0;padding-left:16px;font-size:13px}ul.tight li{margin:3px 0}
 details.card summary{font-weight:700;color:var(--tx)}
 .chip{padding:5px 12px;font-size:12.5px}
 .grid3:has(>.card.sm),.grid2:has(>.card.sm){align-items:start}
+.credits{text-align:center;font-size:11px;color:#59606c;margin:18px 0 0;letter-spacing:.02em}.credits a{color:#7a828f}.credits a:hover{color:var(--warn)}
+.logo svg{display:block}
