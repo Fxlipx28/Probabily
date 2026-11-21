@@ -245,18 +245,20 @@ function vHoy() {
   const tg = d.tono;
   let h = `<div class="hero sm"><span class="kick">Panel del mercado</span><h1>Hoy y <span class="grad">mañana</span></h1><p>${esc(d.manana.texto)}</p></div>`;
   h += `<div class="kpis sm">${kp.map(a => `<a class="kpi" href="#sim/${a.id}"><small>${esc(a.nombre)}</small><b data-live="${a.id}">${price(a.precio)}</b><span class="c ${cls(a.d1)}">${pct(a.d1, 2)}</span>${spark(a.spark, 56, 22)}</a>`).join('')}</div>`;
-  h += `<div class="grid3">
+  const rkc = (t, l, tipo) => `<div class="card sm"><h2>${t}</h2>${l.map(a => rk(a, tipo)).join('')}</div>`;
+  h += `<div class="masonry">
     <div class="card sm glow">${gauge(tg, true)}</div>
+    <div class="card sm glow"><h2>Mañana en una mirada <span class="sub">prob. a 1 día</span></h2>
+      <h3 class="pos">▲ Más probable que suban</h3>${top('1', 1).map(a => rk(a, pc0(a.mc['1'].p_sube))).join('')}
+      <h3 class="neg">▼ Más probable que bajen</h3>${top('1', -1).map(a => rk(a, pc0(1 - a.mc['1'].p_sube))).join('')}
+      <div class="btns"><a class="btn pri" href="#manana">Ver todos →</a></div></div>
     <div class="card sm"><h2>Resumen</h2><ul class="tight">${d.informe.resumen.slice(0, 3).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
-    <div class="card sm"><h2>Alertas</h2>${d.alertas.length ? `<ul class="tight">${d.alertas.slice(0, 5).map(a => `<li><a href="#sim/${a.id}">${esc(a.texto)}</a></li>`).join('')}</ul>` : '<p class="muted">Sin alertas.</p>'}</div></div>`;
-  h += `<div class="grid2"><div class="card sm glow"><h2>Mañana en una mirada <span class="sub">prob. a 1 día</span></h2>
-    <div class="grid2 in"><div><h3 class="pos">▲ Suben</h3>${top('1', 1).map(a => rk(a, pc0(a.mc['1'].p_sube))).join('')}</div><div><h3 class="neg">▼ Bajan</h3>${top('1', -1).map(a => rk(a, pc0(1 - a.mc['1'].p_sube))).join('')}</div></div>
-    <div class="btns"><a class="btn pri" href="#manana">Ver todos →</a></div></div>
-    <div class="card sm"><h2>Últimas noticias <span class="sub">${S.r ? ago(S.r.generado_utc) : ''}</span></h2>${S.r && S.r.noticias.length ? S.r.noticias.slice(0, 7).map(n => `<a class="nrow" href="${esc(safeUrl(n.enlace))}" target="_blank" rel="noopener noreferrer"><span class="src">${esc(n.fuente)}</span>${esc(n.titulo)}</a>`).join('') + '<div class="btns"><a class="btn" href="#noticias">Ver todas →</a></div>' : '<p class="muted">Sin noticias aún.</p>'}</div></div>`;
-  h += `<div class="grid4">${rkCard('Mayor puntaje', '', d.rankings.atractivo.slice(0, 4).map(act).filter(Boolean), 'score')}
-    ${rkCard('Puntaje y riesgo contenido', '', d.rankings.mejor_ajustado.slice(0, 4).map(act).filter(Boolean), 'score')}
-    ${rkCard('Menor riesgo', '', d.rankings.menor_riesgo.slice(0, 4).map(act).filter(Boolean), 'vol')}
-    ${rkCard('Mayor riesgo', '', d.rankings.mayor_riesgo.slice(0, 4).map(act).filter(Boolean), 'vol')}</div>`;
+    <div class="card sm"><h2>Últimas noticias <span class="sub">${S.r ? ago(S.r.generado_utc) : ''}</span></h2>${S.r && S.r.noticias.length ? S.r.noticias.slice(0, 7).map(n => `<a class="nrow" href="${esc(safeUrl(n.enlace))}" target="_blank" rel="noopener noreferrer"><span class="src">${esc(n.fuente)}</span>${esc(n.titulo)}</a>`).join('') + '<div class="btns"><a class="btn" href="#noticias">Ver todas →</a></div>' : '<p class="muted">Sin noticias aún.</p>'}</div>
+    <div class="card sm"><h2>Alertas</h2>${d.alertas.length ? `<ul class="tight">${d.alertas.slice(0, 5).map(x => `<li><a href="#sim/${x.id}">${esc(x.texto)}</a></li>`).join('')}</ul>` : '<p class="muted">Sin alertas.</p>'}</div>
+    ${rkc('Mayor puntaje', d.rankings.atractivo.slice(0, 4).map(act).filter(Boolean), 'score')}
+    ${rkc('Puntaje y riesgo contenido', d.rankings.mejor_ajustado.slice(0, 4).map(act).filter(Boolean), 'score')}
+    ${rkc('Menor riesgo', d.rankings.menor_riesgo.slice(0, 4).map(act).filter(Boolean), 'vol')}
+    ${rkc('Mayor riesgo', d.rankings.mayor_riesgo.slice(0, 4).map(act).filter(Boolean), 'vol')}</div>`;
   h += `<div class="card sm"><h2>Mapa del día <span class="sub">variación en el último día</span></h2><div id="mapa">${mapaHTML()}</div></div>`;
   h += `<details class="card sm"><summary>Más detalles del informe</summary><div class="grid2" style="margin-top:10px">${d.informe.secciones.map(s => `<div><h3>${esc(s.titulo)}</h3><ul class="tight">${s.items.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div><div class="note">${esc(d.informe.aviso)}</div></details>`;
   $('#vista').innerHTML = h;
