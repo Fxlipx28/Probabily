@@ -287,12 +287,12 @@ function resumenHTML(res) {
     const vx = /VIX/i.test(lab) && txt.match(/(\d+(?:[.,]\d+)?)/), md = txt.match(/(\d+(?:[.,]\d+)?)%\s+(bajo|sobre|por encima de|por debajo de)/);
     let ex = '', t2 = null;
     const A = tk => S.d.activos.find(q => q.ticker === tk);
-    if (vx) { const q = A('^VIX'), n = q ? q.precio : parseFloat(vx[1].replace(',', '.')); v = n * 2; c = n < 20 ? 'up' : 'dn';
+    if (vx) { const q = A('^VIX'), n = q ? q.precio : parseFloat(vx[1].replace(',', '.')); v = n * 2; c = q && q.d1 != null ? (q.d1 >= 0 ? 'up' : 'dn') : (n < 20 ? 'up' : 'dn');
       const niv = n < 15 ? 'muy bajo' : n < 20 ? 'bajo' : n < 28 ? 'moderado' : n < 35 ? 'alto' : 'extremo';
       t2 = `<b>${nf(n, 1)}</b> puntos · nivel <b>${niv}</b>` + (q && q.d1 != null ? ` · hoy <span class="${q.d1 >= 0 ? 'pos' : 'neg'}">${pct(q.d1, 1)}</span>` : '');
       ex = 'Mide cuánto movimiento espera el mercado de EE.UU. Bajo 20 = calma, sobre 30 = tensión. Si sube, los inversionistas se protegen.'; }
     else if (md) { const q = A('^GSPC'), n = q ? q.dist_sma200 * 100 : parseFloat(md[1].replace(',', '.')) * (/bajo|debajo/.test(md[2]) ? -1 : 1);
-      v = Math.max(8, Math.abs(n) * 6); c = n < 0 ? 'dn' : 'up';
+      v = Math.max(8, Math.abs(n) * 6); c = q && q.d1 != null ? (q.d1 >= 0 ? 'up' : 'dn') : (n < 0 ? 'dn' : 'up');
       t2 = `Cotiza <b>${Math.abs(n).toFixed(1).replace('.', ',')}%</b> ${n < 0 ? 'bajo' : 'sobre'} su media de 200 días` + (q ? ` · <b>${price(q.precio)}</b> (<span class="${q.d1 >= 0 ? 'pos' : 'neg'}">${pct(q.d1, 1)}</span> hoy)` : '');
       ex = n < 0 ? 'Bajo la media de 200 días suele indicar tendencia de largo plazo debilitada.' : 'Sobre la media de 200 días suele indicar tendencia de largo plazo sana.'; }
     if (!ex) {
