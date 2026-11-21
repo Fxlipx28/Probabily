@@ -85,3 +85,14 @@ class Radar(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestPrecios(unittest.TestCase):
+    def test_calcular(self):
+        import pandas as pd
+        from pipeline import precios
+        close = pd.DataFrame({"AAA": [10.0, 11.0], "BBB": [5.0, float("nan")]})
+        uni = [{"id": "AAA", "ticker": "AAA"}, {"id": "BBB", "ticker": "BBB"}, {"id": "CCC", "ticker": "CCC"}]
+        r = precios.calcular(close, uni)
+        self.assertEqual(list(r), ["AAA"])
+        self.assertAlmostEqual(r["AAA"][1], 0.1, places=5)

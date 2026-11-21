@@ -1,12 +1,13 @@
-name: Actualizar noticias y radar cripto
+name: Actualizar noticias, radar y precios
 
-# Cada 30 minutos lee titulares (RSS públicos) y el radar cripto (CoinGecko, DEX Screener).
-# No usa IA ni instala nada: son unos segundos de Python. Publica en la rama "noticias".
+# Cada 10 minutos: titulares (RSS públicos), radar cripto (CoinGecko, DEX Screener) y precios de toda la lista.
+# No usa IA. Publica en la rama "noticias" (sin historial). Las simulaciones y probabilidades
+# se recalculan en el otro workflow, al abrir cada mercado.
 # GitHub puede retrasar las ejecuciones programadas varios minutos cuando hay mucho tráfico.
 # Para detenerlo: borra este archivo o desactiva el workflow en la pestaña Actions.
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -19,14 +20,21 @@ concurrency:
 jobs:
   noticias:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
       - name: Recolectar noticias y radar
         run: python -m pipeline.rapido --out salida_rapido
+      - name: Instalar librerías de precios
+        continue-on-error: true
+        run: pip install -r requirements.txt
+      - name: Precios de toda la lista
+        continue-on-error: true
+        run: python -m pipeline.precios --out salida_rapido
       - name: Publicar en la rama noticias
         run: |
           cd salida_rapido
@@ -34,5 +42,5 @@ jobs:
           git config user.name "mercado-bot"
           git config user.email "mercado-bot@users.noreply.github.com"
           git add -A
-          git commit -qm "Noticias $(date -u +%F\ %H:%M) UTC"
+          git commit -qm "Noticias y precios $(date -u +%F\ %H:%M) UTC"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" noticias

@@ -19,7 +19,7 @@ const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'O
 const COL = {up: '#2dc38a', dn: '#ef5f6b', acc: '#e5b94e', blue: '#7aa2f7', vi: '#e5b94e', mut: '#8b93a1'};
 
 const S = {d: null, r: null, base: BASES[0], live: {}, filtro: 'Todas', orden: {k: 'score', dir: -1}, busca: '', perfil: 'Balanceado', calH: '30',
-  hz: '1', mqOrden: 'sube', mqId: null, nCat: 'Todas', nSent: 'Todas', nBusca: '', nAct: null, fav: [], vista: 'hoy'};
+  mapa: 'Mundo', hz: '1', mqOrden: 'sube', mqId: null, nCat: 'Todas', nSent: 'Todas', nBusca: '', nAct: null, fav: [], vista: 'hoy'};
 try { S.fav = JSON.parse(localStorage.getItem('lm_fav') || '[]'); } catch (e) { S.fav = []; }
 const saveFav = () => { try { localStorage.setItem('lm_fav', JSON.stringify(S.fav)); } catch (e) { /* sin almacenamiento */ } };
 const isFav = id => S.fav.includes(id);
@@ -94,15 +94,15 @@ function pbar(p) {
   const u = Math.round(p * 100);
   return `<div class="pb"><i class="u" style="width:${u}%"></i><i class="d" style="width:${100 - u}%"></i></div><div class="pbt"><span class="u">▲ ${u}%</span><span class="d">▼ ${100 - u}%</span></div>`;
 }
-function gauge(t) {
+function gauge(t, sm) {
   const L = Math.PI * 90, f = Math.max(0, Math.min(100, t.valor)) / 100;
   return `<h2>Termómetro del mercado</h2><div class="gwrap">
     <svg class="gsvg" viewBox="0 0 200 118"><defs><linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="#ef5f6b"/><stop offset=".5" stop-color="#e5b94e"/><stop offset="1" stop-color="#2dc38a"/></linearGradient></defs>
       <path d="M10 104A90 90 0 0 1 190 104" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="16" stroke-linecap="round"/>
       <path d="M10 104A90 90 0 0 1 190 104" fill="none" stroke="url(#gg)" stroke-width="16" stroke-linecap="round" stroke-dasharray="${(L * f).toFixed(1)} ${L.toFixed(1)}"/>
       <text class="gtx" x="100" y="92" text-anchor="middle">${t.valor}</text><text x="100" y="112" text-anchor="middle" fill="#8b93a1" font-size="12">${esc(t.etiqueta)}</text></svg>
-    <div><div class="glab">0 = miedo / aversión al riesgo · 100 = apetito por riesgo</div></div></div>
-    <ul>${t.detalle.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
+    <div><div class="glab">0 = miedo · 100 = apetito por riesgo</div></div></div>
+    ${sm ? '' : `<ul>${t.detalle.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`}`;
 }
 function hero(kick, titulo, texto) {
   return `<div class="hero"><span class="kick">${esc(kick)}</span><h1>${titulo}</h1>${texto ? `<p>${texto}</p>` : ''}</div>`;
@@ -147,17 +147,24 @@ async function cargar() {
   ruta();
   cinta();
   conectarBinance();
-  setInterval(refrescar, 5 * 60 * 1000);
+  setInterval(refrescar, 3 * 60 * 1000);
 }
 async function cargarRapido() {
+  S.r = null; S.p = null; let base = null;
   for (const u of RAPIDO) {
-    try { const r = await fetch(u + '?' + Date.now()); if (r.ok) { S.r = await r.json(); return; } } catch (e) { /* siguiente fuente */ }
+    try { const r = await fetch(u + '?' + Date.now()); if (r.ok) { S.r = await r.json(); base = u.replace(/rapido\.json$/, ''); break; } } catch (e) { /* siguiente fuente */ }
   }
-  S.r = null;
+  if (base !== null) { try { const r = await fetch(base + 'precios.json?' + Date.now()); if (r.ok) S.p = await r.json(); } catch (e) { /* sin precios rápidos */ } }
+  aplicarPrecios();
+}
+// Los precios rápidos (cada ~10 min) reemplazan precio y variación del último informe si son más recientes.
+function aplicarPrecios() {
+  if (!S.p || !S.d || new Date(S.p.generado_utc) < new Date(S.d.generado_utc)) return;
+  S.d.activos.forEach(a => { const v = S.p.p[a.id]; if (v) { a.precio = v[0]; a.d1 = v[1]; } });
 }
 function encabezado() {
   const d = S.d;
-  const rr = S.r ? ` · noticias ${ago(S.r.generado_utc)}` : '';
+  const rr = (S.p ? ` · precios ${ago(S.p.generado_utc)}` : '') + (S.r ? ` · noticias ${ago(S.r.generado_utc)}` : '');
   $('#estado').innerHTML = `<span><span class="dot"></span>Informe: <b>${esc(d.sesion.nombre)}</b> · ${esc(d.generado_chile)} (hora de Chile)</span><span>Último dato de mercado: ${esc(d.fecha_datos)}</span><span>${d.n_sims.toLocaleString('es-CL')} escenarios por activo${rr}</span>`;
   const b = $('#demo');
   if (d.demo) { b.hidden = false; b.textContent = 'DATOS DE DEMOSTRACIÓN: números inventados para probar la página. Los reales aparecen cuando corre la actualización automática.'; } else b.hidden = true;
@@ -165,12 +172,12 @@ function encabezado() {
 async function refrescar() {
   try {
     const r = await getJSON('latest.json', [S.base]);
-    if (r.j.generado_utc !== S.d.generado_utc) { S.d = r.j; encabezado(); }
+    if (r.j.generado_utc !== S.d.generado_utc) { S.d = r.j; }
   } catch (e) { /* se reintenta en 5 minutos */ }
-  const antes = S.r && S.r.generado_utc;
   await cargarRapido();
-  if (S.r && S.r.generado_utc !== antes) encabezado();
-  if (['hoy', 'noticias', 'radar', 'lista'].includes(S.vista)) ruta(true);
+  encabezado();
+  cinta();
+  if (['hoy', 'manana', 'mercados', 'noticias', 'radar', 'lista'].includes(S.vista) && !document.activeElement?.matches?.('input,select,textarea')) ruta(true);
 }
 
 function ruta(keep) {
@@ -221,30 +228,40 @@ function conectarBinance() {
 }
 
 // ---------------------------------------------------------------- HOY
+const MAPAS = [['Mundo', ['Índices']], ['EE.UU.', ['Acciones EE.UU.', 'ETFs']], ['Global', ['Acciones globales']], ['Chile', ['Chile', 'Salmoneras']],
+  ['Materias primas', ['Materias primas']], ['Cripto', ['Cripto', 'Cripto nuevas', 'Memecoins']], ['Divisas y bonos', ['Divisas', 'Bonos']]];
+function mapaHTML() {
+  const d = S.d, g = MAPAS.find(m => m[0] === S.mapa) || MAPAS[0];
+  const l = d.activos.filter(a => g[1].includes(a.clase) && a.d1 != null).sort((x, y) => y.d1 - x.d1);
+  const sube = l.filter(a => a.d1 > 0).length, prom = l.length ? l.reduce((s, a) => s + a.d1, 0) / l.length : null;
+  return `<div class="chips">${MAPAS.map(m => `<span class="chip ${m[0] === g[0] ? 'on' : ''}" data-mapa="${esc(m[0])}">${esc(m[0])}</span>`).join('')}</div>
+    <p class="muted" style="margin:0 0 8px;font-size:12.5px">${l.length} activos · <span class="pos">${sube} suben</span> · <span class="neg">${l.length - sube} bajan</span> · promedio <b class="${cls(prom)}">${pct(prom, 2)}</b></p>
+    <div class="heat">${l.map(a => `<a class="tile" href="#sim/${a.id}" style="background:${divColor(a.d1, 0.04)}"><b>${esc(a.nombre)}</b>${pct(a.d1)}</a>`).join('') || '<span class="muted">Sin datos.</span>'}</div>`;
+}
 function vHoy() {
   const d = S.d, rk_ = d.activos.filter(a => a.rankeable);
-  const kp = ['^GSPC', '^IXIC', 'BTC-USD', 'GC=F', '^VIX'].map(t => d.activos.find(a => a.ticker === t)).filter(Boolean);
-  const top = (h, dir) => [...rk_].sort((a, b) => dir * (b.mc[h].p_sube - a.mc[h].p_sube)).slice(0, 5);
-  let h = hero('Panel del mercado', `Qué pasó y qué podría pasar <span class="grad">hoy y mañana</span>`, esc(d.manana.texto));
-  h += `<div class="kpis">${kp.map(a => `<a class="kpi" href="#sim/${a.id}"><small>${esc(a.nombre)}</small><b data-live="${a.id}">${price(a.precio)}</b><span class="c ${cls(a.d1)}">${pct(a.d1, 2)}</span>${spark(a.spark, 70, 26)}</a>`).join('')}</div>`;
-  h += `<div class="grid2"><div class="card glow">${gauge(d.tono)}</div><div class="card"><h2>${esc(d.informe.titulo)}</h2><ul>${d.informe.resumen.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>`;
-  h += `<div class="card glow"><h2>Mañana en una mirada <span class="sub">simulación de ${d.n_sims.toLocaleString('es-CL')} escenarios por activo</span></h2>
-    <div class="grid2"><div><h3 class="pos">▲ Más probable que suban (1 día)</h3>${top('1', 1).map(a => rk(a, pc0(a.mc['1'].p_sube))).join('')}</div>
-    <div><h3 class="neg">▼ Más probable que bajen (1 día)</h3>${top('1', -1).map(a => rk(a, pc0(1 - a.mc['1'].p_sube))).join('')}</div></div>
-    <div class="btns"><a class="btn pri" href="#manana">Ver probabilidades de todos los activos →</a></div></div>`;
-  h += `<div class="grid4">${rkCard('Mayor puntaje', 'Tendencia, momentum y simulación.', d.rankings.atractivo.slice(0, 6).map(act).filter(Boolean), 'score')}
-    ${rkCard('Buen puntaje, riesgo contenido', 'Riesgo bajo o medio, sin tendencia bajista.', d.rankings.mejor_ajustado.slice(0, 6).map(act).filter(Boolean), 'score')}
-    ${rkCard('Menor riesgo', 'Menor volatilidad anual.', d.rankings.menor_riesgo.slice(0, 6).map(act).filter(Boolean), 'vol')}
-    ${rkCard('Mayor riesgo', 'Mayor volatilidad anual.', d.rankings.mayor_riesgo.slice(0, 6).map(act).filter(Boolean), 'vol')}</div>`;
-  if (S.r && S.r.noticias.length) h += `<div class="card"><h2>Últimas noticias <span class="sub">${ago(S.r.generado_utc)}</span></h2><div class="ngrid">${S.r.noticias.slice(0, 6).map(newsCard).join('')}</div><div class="btns"><a class="btn" href="#noticias">Ver todas las noticias →</a></div></div>`;
-  if (d.alertas.length) h += `<div class="card"><h2>Alertas</h2><ul>${d.alertas.map(a => `<li><a href="#sim/${a.id}">${esc(a.texto)}</a></li>`).join('')}</ul></div>`;
-  h += `<div class="card"><h2>Mapa del día <span class="sub">variación en el último día</span></h2>`;
-  d.clases.forEach(c => {
-    const l = d.activos.filter(a => a.clase === c && a.d1 != null); if (!l.length) return;
-    h += `<h3>${esc(c)}</h3><div class="heat">${l.map(a => `<a class="tile" href="#sim/${a.id}" style="background:${divColor(a.d1, 0.04)}"><b>${esc(a.nombre)}</b>${pct(a.d1)}</a>`).join('')}</div>`;
-  });
-  h += `</div><div class="grid2">${d.informe.secciones.map(s => `<div class="card"><h2>${esc(s.titulo)}</h2><ul>${s.items.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div><div class="note">${esc(d.informe.aviso)}</div>`;
+  const kp = ['^GSPC', '^IXIC', 'BTC-USD', 'GC=F', 'USDCLP=X', '^VIX'].map(t => d.activos.find(a => a.ticker === t)).filter(Boolean);
+  const top = (h, dir) => [...rk_].sort((a, b) => dir * (b.mc[h].p_sube - a.mc[h].p_sube)).slice(0, 4);
+  const tg = d.tono;
+  let h = `<div class="hero sm"><span class="kick">Panel del mercado</span><h1>Hoy y <span class="grad">mañana</span></h1><p>${esc(d.manana.texto)}</p></div>`;
+  h += `<div class="kpis sm">${kp.map(a => `<a class="kpi" href="#sim/${a.id}"><small>${esc(a.nombre)}</small><b data-live="${a.id}">${price(a.precio)}</b><span class="c ${cls(a.d1)}">${pct(a.d1, 2)}</span>${spark(a.spark, 56, 22)}</a>`).join('')}</div>`;
+  h += `<div class="grid3">
+    <div class="card sm glow">${gauge(tg, true)}</div>
+    <div class="card sm"><h2>Resumen</h2><ul class="tight">${d.informe.resumen.slice(0, 3).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+    <div class="card sm"><h2>Alertas</h2>${d.alertas.length ? `<ul class="tight">${d.alertas.slice(0, 5).map(a => `<li><a href="#sim/${a.id}">${esc(a.texto)}</a></li>`).join('')}</ul>` : '<p class="muted">Sin alertas.</p>'}</div></div>`;
+  h += `<div class="grid2"><div class="card sm glow"><h2>Mañana en una mirada <span class="sub">prob. a 1 día</span></h2>
+    <div class="grid2 in"><div><h3 class="pos">▲ Suben</h3>${top('1', 1).map(a => rk(a, pc0(a.mc['1'].p_sube))).join('')}</div><div><h3 class="neg">▼ Bajan</h3>${top('1', -1).map(a => rk(a, pc0(1 - a.mc['1'].p_sube))).join('')}</div></div>
+    <div class="btns"><a class="btn pri" href="#manana">Ver todos →</a></div></div>
+    <div class="card sm"><h2>Últimas noticias <span class="sub">${S.r ? ago(S.r.generado_utc) : ''}</span></h2>${S.r && S.r.noticias.length ? S.r.noticias.slice(0, 7).map(n => `<a class="nrow" href="${esc(safeUrl(n.enlace))}" target="_blank" rel="noopener noreferrer"><span class="src">${esc(n.fuente)}</span>${esc(n.titulo)}</a>`).join('') + '<div class="btns"><a class="btn" href="#noticias">Ver todas →</a></div>' : '<p class="muted">Sin noticias aún.</p>'}</div></div>`;
+  h += `<div class="grid4">${rkCard('Mayor puntaje', '', d.rankings.atractivo.slice(0, 4).map(act).filter(Boolean), 'score')}
+    ${rkCard('Puntaje y riesgo contenido', '', d.rankings.mejor_ajustado.slice(0, 4).map(act).filter(Boolean), 'score')}
+    ${rkCard('Menor riesgo', '', d.rankings.menor_riesgo.slice(0, 4).map(act).filter(Boolean), 'vol')}
+    ${rkCard('Mayor riesgo', '', d.rankings.mayor_riesgo.slice(0, 4).map(act).filter(Boolean), 'vol')}</div>`;
+  h += `<div class="card sm"><h2>Mapa del día <span class="sub">variación en el último día</span></h2><div id="mapa">${mapaHTML()}</div></div>`;
+  h += `<details class="card sm"><summary>Más detalles del informe</summary><div class="grid2" style="margin-top:10px">${d.informe.secciones.map(s => `<div><h3>${esc(s.titulo)}</h3><ul class="tight">${s.items.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div><div class="note">${esc(d.informe.aviso)}</div></details>`;
   $('#vista').innerHTML = h;
+  const ligar = () => $$('.chip[data-mapa]').forEach(c => c.onclick = () => { S.mapa = c.dataset.mapa; $('#mapa').innerHTML = mapaHTML(); ligar(); });
+  ligar();
 }
 
 // ---------------------------------------------------------------- MAÑANA
@@ -633,7 +650,7 @@ function vCuenta() {
 // ---------------------------------------------------------------- MÉTODO
 function vMetodo() {
   $('#vista').innerHTML = hero('Método', `Cómo funciona <span class="grad">(y qué no hace)</span>`, '') + `<div class="card">
-  <h3>Actualización continua sin gastar IA</h3><p>Todo se calcula con programas normales (Python en GitHub Actions) y la página solo lee archivos ya listos: no hay IA corriendo cuando la usas. El informe completo (precios, simulaciones, probabilidades) se recalcula antes de la apertura de Tokio, Europa, Santiago y Nueva York y tras el cierre de Wall Street; los fines de semana hay un informe cripto. Las noticias y el radar cripto se actualizan cada 30 minutos, y esta página revisa si hay algo nuevo cada 5 minutos. Los precios cripto se mueven en vivo desde Binance mientras tienes la página abierta.</p>
+  <h3>Actualización continua sin gastar IA</h3><p>Todo se calcula con programas normales (Python en GitHub Actions) y la página solo lee archivos ya listos: no hay IA corriendo cuando la usas. El informe completo (precios, simulaciones, probabilidades) se recalcula antes de la apertura de Tokio, Europa, Santiago y Nueva York y tras el cierre de Wall Street; los fines de semana hay un informe cripto. Las noticias y el radar cripto se actualizan cada 30 minutos, y esta página revisa si hay algo nuevo cada 3 minutos. Los precios cripto se mueven en vivo desde Binance mientras tienes la página abierta.</p>
   <h3>Datos</h3><p>Precios diarios de Yahoo Finance (≈12 años); noticias de RSS públicos (solo titular y enlace a la fuente); radar cripto de CoinGecko y DEX Screener; sentimiento Fear &amp; Greed de alternative.me. Si una fuente falla, esa parte queda con su último dato y el resto sigue.</p>
   <h3>Escenarios simulados (Monte Carlo)</h3><p>Para cada activo se simulan ${S.d.n_sims.toLocaleString('es-CL')} futuros posibles. Se toman los retornos diarios pasados, se normalizan por la volatilidad de ese momento y se sortean con reposición; luego se reescalan con una volatilidad simulada que sube después de sustos y baja en calma (tipo GARCH). Así las caídas bruscas, más frecuentes que en una campana normal, quedan representadas. La <b>deriva</b> (tendencia esperada) es solo el 25% de la histórica y está limitada, para no tratar un mercado alcista pasado como una promesa. De los escenarios salen: probabilidad de subir y de bajar, rango del 90% de los casos, pérdida 95% (VaR), pérdida promedio del peor 5% (CVaR) y probabilidad de tocar −10%.</p>
   <h3>Situaciones parecidas</h3><p>Se buscan en la historia del mismo activo los días con igual tendencia (precio vs. medias de 50 y 200 días) y volatilidad relativa, y se mide cuántas veces subió después, con rango de confianza y comparado con la frecuencia general.</p>

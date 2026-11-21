@@ -37,7 +37,6 @@ def _gn(consulta, es=True):
 # (categoría, fuente por defecto, url)
 FEEDS = [
     ("Mercados", "CNBC", "https://www.cnbc.com/id/100003114/device/rss/rss.html"),
-    ("Mercados", "Investing.com", "https://www.investing.com/rss/news.rss"),
     ("Mercados", "MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_marketpulse"),
     ("Mercados", "Google News", _gn("Wall Street OR bolsas OR acciones mercados")),
     ("Economía y bancos centrales", "CNBC", "https://www.cnbc.com/id/20910258/device/rss/rss.html"),
