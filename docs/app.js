@@ -16,7 +16,7 @@ const RAPIDO = LOCAL ? ['data/rapido.json'] : [CFG.rapido, 'data/rapido.json'].f
 const HZ = {'1': 'Mañana (1 día)', '7': '1 semana', '30': '1 mes'};
 const HZS = {'1': '1 día', '7': '1 semana', '30': '1 mes'};
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-const COL = {up: '#22e3a1', dn: '#ff5d73', acc: '#ffc857', blue: '#22d3ee', vi: '#8b5cf6', mut: '#8f9db8'};
+const COL = {up: '#2dc38a', dn: '#ef5f6b', acc: '#e5b94e', blue: '#7aa2f7', vi: '#e5b94e', mut: '#8b93a1'};
 
 const S = {d: null, r: null, base: BASES[0], live: {}, filtro: 'Todas', orden: {k: 'score', dir: -1}, busca: '', perfil: 'Balanceado', calH: '30',
   hz: '1', mqOrden: 'sube', mqId: null, nCat: 'Todas', nSent: 'Todas', nBusca: '', nAct: null, fav: [], vista: 'hoy'};
@@ -25,7 +25,7 @@ const saveFav = () => { try { localStorage.setItem('lm_fav', JSON.stringify(S.fa
 const isFav = id => S.fav.includes(id);
 const toggleFav = id => { S.fav = isFav(id) ? S.fav.filter(x => x !== id) : [...S.fav, id]; saveFav(); };
 
-Chart.defaults.color = '#8f9db8';
+Chart.defaults.color = '#8b93a1';
 Chart.defaults.borderColor = 'rgba(255,255,255,.07)';
 Chart.defaults.font.family = 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
 Chart.defaults.animation = false;
@@ -34,7 +34,7 @@ let charts = [];
 const kill = () => { charts.forEach(c => c.destroy()); charts = []; };
 const mk = (id, cfg) => { const el = document.getElementById(id); if (el) charts.push(new Chart(el, cfg)); };
 const act = id => S.d.activos.find(a => a.id === id);
-const divColor = (v, e = 1) => v == null ? 'transparent' : `rgba(${v >= 0 ? '34,227,161' : '255,93,115'},${Math.min(Math.abs(v) / e, 1) * 0.75})`;
+const divColor = (v, e = 1) => v == null ? 'transparent' : `rgba(${v >= 0 ? '45,195,138' : '239,95,107'},${Math.min(Math.abs(v) / e, 1) * 0.7})`;
 const ago = iso => { const m = Math.max(0, (Date.now() - new Date(iso).getTime()) / 60000); if (isNaN(m)) return ''; if (m < 60) return `hace ${Math.round(m)} min`; if (m < 1440) return `hace ${Math.round(m / 60)} h`; return `hace ${Math.round(m / 1440)} d`; };
 
 async function getJSON(rel, bases = BASES) {
@@ -85,10 +85,10 @@ function pbar(p) {
 function gauge(t) {
   const L = Math.PI * 90, f = Math.max(0, Math.min(100, t.valor)) / 100;
   return `<h2>Termómetro del mercado</h2><div class="gwrap">
-    <svg class="gsvg" viewBox="0 0 200 118"><defs><linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="#ff5d73"/><stop offset=".5" stop-color="#ffc857"/><stop offset="1" stop-color="#22e3a1"/></linearGradient></defs>
-      <path d="M10 104A90 90 0 0 1 190 104" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="16" stroke-linecap="round"/>
+    <svg class="gsvg" viewBox="0 0 200 118"><defs><linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="#ef5f6b"/><stop offset=".5" stop-color="#e5b94e"/><stop offset="1" stop-color="#2dc38a"/></linearGradient></defs>
+      <path d="M10 104A90 90 0 0 1 190 104" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="16" stroke-linecap="round"/>
       <path d="M10 104A90 90 0 0 1 190 104" fill="none" stroke="url(#gg)" stroke-width="16" stroke-linecap="round" stroke-dasharray="${(L * f).toFixed(1)} ${L.toFixed(1)}"/>
-      <text class="gtx" x="100" y="92" text-anchor="middle">${t.valor}</text><text x="100" y="112" text-anchor="middle" fill="#8f9db8" font-size="12">${esc(t.etiqueta)}</text></svg>
+      <text class="gtx" x="100" y="92" text-anchor="middle">${t.valor}</text><text x="100" y="112" text-anchor="middle" fill="#8b93a1" font-size="12">${esc(t.etiqueta)}</text></svg>
     <div><div class="glab">0 = miedo / aversión al riesgo · 100 = apetito por riesgo</div></div></div>
     <ul>${t.detalle.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
 }
@@ -415,11 +415,11 @@ async function vSim(id) {
     ${comp ? `<h3>De qué se compone el puntaje</h3>${comp}` : ''}`;
   Object.keys(S.live).forEach(pintarVivo);
   const lab = [...Array(sim.pasos + 1).keys()], B = sim.bandas;
-  const ds = sim.caminos.map(c => ({data: c, borderColor: 'rgba(150,170,220,.16)', borderWidth: 1, pointRadius: 0}));
+  const ds = sim.caminos.map(c => ({data: c, borderColor: 'rgba(160,170,190,.16)', borderWidth: 1, pointRadius: 0}));
   ds.push({data: B.p5, borderColor: 'rgba(0,0,0,0)', pointRadius: 0});
-  ds.push({data: B.p95, borderColor: 'rgba(0,0,0,0)', backgroundColor: 'rgba(139,92,246,.16)', fill: '-1', pointRadius: 0});
+  ds.push({data: B.p95, borderColor: 'rgba(0,0,0,0)', backgroundColor: 'rgba(229,185,78,.14)', fill: '-1', pointRadius: 0});
   ds.push({data: B.p25, borderColor: 'rgba(0,0,0,0)', pointRadius: 0});
-  ds.push({data: B.p75, borderColor: 'rgba(0,0,0,0)', backgroundColor: 'rgba(34,211,238,.28)', fill: '-1', pointRadius: 0});
+  ds.push({data: B.p75, borderColor: 'rgba(0,0,0,0)', backgroundColor: 'rgba(229,185,78,.28)', fill: '-1', pointRadius: 0});
   ds.push({data: B.p50, borderColor: COL.acc, borderWidth: 2.5, pointRadius: 0});
   mk('fan', {type: 'line', data: {labels: lab, datasets: ds}, options: {plugins: {legend: {display: false}, tooltip: {enabled: false}}, scales: {y: {ticks: {callback: v => v + '%'}}, x: {ticks: {maxTicksLimit: 8}}}}});
   const H = sim.hist, mids = H.cuentas.map((_, i) => (H.bordes[i] + H.bordes[i + 1]) / 2);
@@ -427,7 +427,7 @@ async function vSim(id) {
     options: {plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => nf(c.raw * 100, 1) + '% de los escenarios'}}}, scales: {y: {ticks: {callback: v => nf(v * 100, 0) + '%'}}, x: {ticks: {maxTicksLimit: 7}}}}});
   const P = det.historia;
   mk('px', {type: 'line', data: {labels: P.fechas, datasets: [
-    {label: 'Precio', data: P.cierre, borderColor: '#eaf0fb', borderWidth: 1.5, pointRadius: 0},
+    {label: 'Precio', data: P.cierre, borderColor: '#e9ecf1', borderWidth: 1.5, pointRadius: 0},
     {label: 'Media 50', data: P.sma50, borderColor: COL.up, borderWidth: 1.5, pointRadius: 0},
     {label: 'Media 200', data: P.sma200, borderColor: COL.dn, borderWidth: 1.5, pointRadius: 0}]},
     options: {plugins: {legend: {labels: {boxWidth: 12}}}, scales: {x: {ticks: {maxTicksLimit: 6}}}}});
