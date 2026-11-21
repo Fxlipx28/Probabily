@@ -150,6 +150,7 @@ def simular(s, rng, n_sims=10000):
             "p5": float(q[0]), "p25": float(q[1]), "p50": float(q[2]), "p75": float(q[3]), "p95": float(q[4]),
             "media": float(R.mean()), "var95": float(-q[0]), "cvar95": float(-R[R <= q[0]].mean()),
         }
+    resumen["1"]["sigma"] = float(np.sqrt(var_sig))
     H30 = steps[30]
     caida10 = float((trayectos[:H30 + 1].min(axis=0) <= np.log(0.90)).mean())
     resumen["30"]["p_toca_menos10"] = caida10

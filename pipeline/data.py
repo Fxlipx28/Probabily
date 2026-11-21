@@ -106,13 +106,13 @@ def funding_cripto():
 
 # ------------------------------------------------------------------ demo
 _VOL = {"Índices": .16, "ETFs": .17, "Acciones EE.UU.": .28, "Acciones globales": .30, "Chile": .27,
-        "Salmoneras": .38, "Materias primas": .27, "Bonos": .08, "Divisas": .09, "Cripto": .75,
+        "Salmoneras": .38, "Materias primas": .27, "Bonos": .08, "Divisas": .09, "Cripto": .75, "Cripto nuevas": .95,
         "Memecoins": 1.2, "Indicadores": .18}
 _DRIFT = {"Índices": .08, "ETFs": .08, "Acciones EE.UU.": .13, "Acciones globales": .10, "Chile": .07,
-          "Salmoneras": .08, "Materias primas": .04, "Bonos": .02, "Divisas": .0, "Cripto": .30,
+          "Salmoneras": .08, "Materias primas": .04, "Bonos": .02, "Divisas": .0, "Cripto": .30, "Cripto nuevas": .25,
           "Memecoins": .15, "Indicadores": .05}
 _BETA = {"Índices": .85, "ETFs": .8, "Acciones EE.UU.": .65, "Acciones globales": .55, "Chile": .4,
-         "Salmoneras": .25, "Materias primas": .25, "Bonos": -.1, "Divisas": .05, "Cripto": .4,
+         "Salmoneras": .25, "Materias primas": .25, "Bonos": -.1, "Divisas": .05, "Cripto": .4, "Cripto nuevas": .35,
          "Memecoins": .35, "Indicadores": .6}
 
 
@@ -153,7 +153,7 @@ def _demo(universo):
         s = pd.Series(serie, index=dias)
         if not a["cripto"]:
             s = s.where(habiles)
-        if a["ticker"] in ("PEPE24478-USD", "BONK24478-USD"):  # historia corta, como en la realidad
+        if a["ticker"] in ("PEPE24478-USD", "BONK-USD", "WIF-USD", "SUI20947-USD"):  # historia corta, como en la realidad
             s = s.iloc[-1100:].reindex(dias)
         cols[a["id"]] = s
     df = pd.DataFrame(cols)
