@@ -68,12 +68,13 @@ const IC = {
   corr: 'M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z',
   port: 'M12 3a9 9 0 1 0 9 9h-9zM15 3.5A9 9 0 0 1 20.5 9H15z',
   calib: 'M12 3v18M3 12h18M7 7l10 10',
+  hist: 'M4 4v16h16M8 15l3-4 3 2 5-7',
   lista: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
   cuenta: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
   metodo: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v6M12 7.5v.1',
 };
 const NAV = [
-  ['Panel', [['hoy', 'Hoy'], ['manana', 'Mañana', 'NUEVO'], ['noticias', 'Noticias', 'NUEVO'], ['radar', 'Radar cripto', 'NUEVO']]],
+  ['Panel', [['hoy', 'Hoy'], ['manana', 'Mañana', 'NUEVO'], ['noticias', 'Noticias', 'NUEVO'], ['radar', 'Radar cripto', 'NUEVO'], ['hist', 'Historial', 'ÚNICO']]],
   ['Análisis', [['mercados', 'Mercados'], ['sim', 'Simulador'], ['estac', 'Estacionalidad'], ['corr', 'Correlaciones'], ['port', 'Portafolio'], ['calib', 'Calibración']]],
   ['Mío', [['lista', 'Mi lista'], ['cuenta', 'Cuenta']]],
   ['Info', [['metodo', 'Método']]],
@@ -178,7 +179,7 @@ function ruta(keep) {
   S.vista = vista;
   if (!keep && window.__vista) window.__vista(vista);
   $$('#nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + vista));
-  const V = {hoy: vHoy, manana: vManana, noticias: vNoticias, radar: vRadar, mercados: vMercados, sim: vSim, estac: vEstac, corr: vCorr, port: vPort, calib: vCalib, lista: vLista, cuenta: vCuenta, metodo: vMetodo};
+  const V = {hoy: vHoy, manana: vManana, noticias: vNoticias, radar: vRadar, mercados: vMercados, sim: vSim, estac: vEstac, corr: vCorr, port: vPort, calib: vCalib, hist: vHist, lista: vLista, cuenta: vCuenta, metodo: vMetodo};
   (V[vista] || vHoy)(arg);
   if (!keep) window.scrollTo(0, 0);
 }
@@ -560,6 +561,39 @@ function vCalib() {
     options: {plugins: {legend: {labels: {boxWidth: 12}}}, scales: {y: {min: 0, max: 1, ticks: {callback: v => pc0(v)}}}}});
 }
 
+
+// ---------------------------------------------------------------- HISTORIAL (prueba pública hacia adelante)
+async function vHist() {
+  let h = hero('Transparencia', `Lo que dijimos y lo que <span class="grad">pasó de verdad</span>`, 'Cada día se guardan las probabilidades del modelo ANTES de conocer el resultado. Cuando pasa el plazo, se comparan con lo que ocurrió. Aquí ves el marcador real, sea bueno o malo.');
+  $('#vista').innerHTML = h + '<p class="muted pad">Cargando historial…</p>';
+  let H;
+  try { H = (await getJSON('historial.json', [S.base])).j; } catch (e) { H = null; }
+  if (S.vista !== 'hist') return;
+  if (!H) { $('#vista').innerHTML = h + '<div class="card"><h2>Aún no hay historial</h2><p class="muted">Se empieza a llenar con el próximo informe real. La primera medición (1 día) aparece al día siguiente; la de 1 mes, a los 30 días.</p></div>'; return; }
+  const hs = ['1', '7', '30'];
+  const tot = hs.reduce((s, k) => s + H.res[k].n, 0);
+  const sk = k => { const r = H.res[k]; if (!r.n) return null; const b = r.y / r.n, ref = b * (1 - b); return ref > 0 ? 1 - (r.brier / r.n) / ref : null; };
+  h += `<div class="note info"><b>Cómo leerlo.</b> “Acierto de dirección” es cuántas veces el lado con más del 50% fue el correcto. “Puntaje de habilidad” compara al modelo con un método tonto que siempre dice la frecuencia histórica de subidas: <b>0 = igual de bueno que el tonto</b>, positivo = aporta algo, negativo = peor. Medimos desde ${esc(H.desde || '—')}. ${tot ? '' : 'Todavía no vence ninguna predicción: vuelve mañana.'}</div>`;
+  h += `<div class="grid3">${hs.map(k => { const r = H.res[k], s = sk(k);
+    return `<div class="card glow"><h2>${HZ[k]}</h2>${r.n ? `<div class="kpis" style="grid-template-columns:1fr 1fr;margin:6px 0"><div class="kpi"><small>Acierto de dirección</small><b>${pc0(r.acierto / r.n)}</b></div>
+      <div class="kpi"><small>Puntaje de habilidad</small><b class="${s > 0.01 ? 'pos' : s < -0.01 ? 'neg' : ''}">${s == null ? '—' : nf(s, 3)}</b></div></div>
+      <p class="muted" style="margin:6px 0 0;font-size:13px">${r.n.toLocaleString('es-CL')} predicciones resueltas · subieron ${pc0(r.y / r.n)} de las veces · ${(H.pendientes[k] || 0).toLocaleString('es-CL')} esperando resultado.</p>` : `<p class="muted">Sin resultados todavía. ${(H.pendientes[k] || 0).toLocaleString('es-CL')} predicciones esperando su plazo.</p>`}</div>`; }).join('')}</div>`;
+  const cl = {};
+  hs.forEach(k => Object.entries(H.res[k].clases).forEach(([c, v]) => { cl[c] = cl[c] || [0, 0]; cl[c][0] += v[0]; cl[c][1] += v[1]; }));
+  const filasC = Object.entries(cl).filter(([, v]) => v[0] >= 20).sort((x, y) => y[1] / y[0] - x[1] / x[0]);
+  h += `<div class="grid2"><div class="card"><h2>¿Las probabilidades son honestas? <span class="sub">1 mes</span></h2><div class="cv s"><canvas id="hc"></canvas></div>
+    <p class="muted" style="font-size:12.5px;margin:8px 0 0">Si el modelo dice “60%”, lo ideal es que suba ~60% de las veces. Cuanto más cerca de la diagonal, mejor calibrado.</p></div>
+    <div class="card"><h2>Acierto por tipo de activo <span class="sub">todos los plazos</span></h2>${filasC.length ? filasC.map(([c, v]) => `<div class="bar"><span>${esc(c)}</span><i style="width:${Math.round(v[1] / v[0] * 160)}px"></i><span style="width:auto">${pc0(v[1] / v[0])} <span class="muted">(${v[0]})</span></span></div>`).join('') : '<p class="muted">Aún hay pocos datos por clase.</p>'}</div></div>`;
+  const ult = [...H.ultimos].reverse().slice(0, 40);
+  h += `<div class="card"><h2>Últimos resultados</h2>${ult.length ? `<div class="scroll" style="max-height:420px;overflow:auto"><table><thead><tr><th class="l">Activo</th><th>Plazo</th><th>Fecha</th><th>Dijimos “sube”</th><th>Pasó</th><th>Retorno</th><th></th></tr></thead><tbody>
+    ${ult.map(u => { const ok = (u[5] >= 0.5) === (u[6] === 1); return `<tr><td class="l">${esc(u[1])}</td><td>${HZS[u[4]]}</td><td>${esc(u[2])}</td><td>${pc0(u[5])}</td><td class="${u[6] ? 'pos' : 'neg'}">${u[6] ? 'Subió' : 'Bajó'}</td><td class="${cls(u[7])}">${pct(u[7])}</td><td class="${ok ? 'pos' : 'neg'}">${ok ? '✔' : '✘'}</td></tr>`; }).join('')}</tbody></table></div>` : '<p class="muted">Todavía no hay resultados.</p>'}</div>
+    <div class="note">Los resultados son parte del producto: se publican aunque sean malos. Una herramienta que muestra cuánto falla es más útil que una que solo muestra aciertos.</div>`;
+  $('#vista').innerHTML = h;
+  const bins = H.res['30'].bins.map((b, i) => b[0] >= 5 ? {x: b[1] / b[0], y: b[2] / b[0], n: b[0]} : null).filter(Boolean);
+  if (bins.length) mk('hc', {type: 'scatter', data: {datasets: [{label: 'Real', data: bins, backgroundColor: COL.acc, pointRadius: 6}, {type: 'line', label: 'Perfecto', data: [{x: 0, y: 0}, {x: 1, y: 1}], borderColor: COL.mut, borderDash: [5, 4], pointRadius: 0}]},
+    options: {plugins: {legend: {labels: {boxWidth: 12}}, tooltip: {callbacks: {label: c => `Dijimos ${pc0(c.raw.x)} · subió ${pc0(c.raw.y)}${c.raw.n ? ' (' + c.raw.n + ' casos)' : ''}`}}}, scales: {x: {min: 0, max: 1, title: {display: true, text: 'Probabilidad que dijimos'}, ticks: {callback: v => pc0(v)}}, y: {min: 0, max: 1, title: {display: true, text: 'Lo que pasó'}, ticks: {callback: v => pc0(v)}}}}});
+}
+
 // ---------------------------------------------------------------- MI LISTA
 function vLista() {
   const d = S.d, l = S.fav.map(act).filter(Boolean);
@@ -604,7 +638,7 @@ function vMetodo() {
   <h3>Situaciones parecidas</h3><p>Se buscan en la historia del mismo activo los días con igual tendencia (precio vs. medias de 50 y 200 días) y volatilidad relativa, y se mide cuántas veces subió después, con rango de confianza y comparado con la frecuencia general.</p>
   <h3>Puntaje (0-100)</h3><p>30% tendencia, 25% momentum, 20% retorno por unidad de riesgo del último año, 15% probabilidad simulada de subir en un mes, 10% cercanía al máximo; se reduce hasta un 50% si el RSI supera 70. Mide lo que viene pasando, no lo que va a pasar.</p>
   <h3>Riesgo</h3><p>Según la volatilidad anual de los últimos 60 días: Bajo (&lt;12%), Medio (12–25%), Alto (25–45%), Muy alto (&gt;45%). Las cripto nuevas y memecoins pueden perder la mitad de su valor.</p>
-  <h3>Límites</h3><ul><li>La calibración histórica muestra que la dirección de un día o una semana es casi un cara o sello; lo confiable es el tamaño del riesgo.</li><li>No considera calendario económico, resultados de empresas ni feriados. Las noticias se muestran como contexto, no entran al cálculo.</li><li>No incluye flujos de ballenas on-chain ni de ETFs (requieren fuentes de pago).</li><li>Un ticker sin datos aparece listado en “Mercados” y se omite sin afectar el resto. Los datos pueden tener minutos u horas de retraso.</li></ul>
+  <h3>Límites</h3><ul><li>El <a href="#hist" style="color:var(--warn)">Historial</a> guarda lo que decía el modelo cada día y lo compara con lo que pasó, para que lo verifiques tú mismo.</li><li>La calibración histórica muestra que la dirección de un día o una semana es casi un cara o sello; lo confiable es el tamaño del riesgo.</li><li>No considera calendario económico, resultados de empresas ni feriados. Las noticias se muestran como contexto, no entran al cálculo.</li><li>No incluye flujos de ballenas on-chain ni de ETFs (requieren fuentes de pago).</li><li>Un ticker sin datos aparece listado en “Mercados” y se omite sin afectar el resto. Los datos pueden tener minutos u horas de retraso.</li></ul>
   <div class="note">Herramienta para leer el mercado y apoyar tus decisiones. No es asesoría financiera.</div></div>`;
 }
 

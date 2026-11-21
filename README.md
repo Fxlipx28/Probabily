@@ -11,6 +11,7 @@ Página web que lee el mercado mundial (índices, ETFs, acciones de EE.UU., glob
 - **Noticias:** titulares de fuentes públicas etiquetados por activo y tema, con tono (positivo/negativo) por palabras clave.
 - **Radar cripto:** mayores subidas y caídas, tendencias, volumen anormal y tokens nuevos en DEX (con advertencia de riesgo).
 - **Mercados / Simulador / Estacionalidad / Correlaciones / Portafolio / Calibración:** análisis por activo y por cartera.
+- **Historial (lo que hace única a la página):** guarda cada día las probabilidades ANTES del resultado y las compara con lo que pasó (acierto, puntaje frente a un método tonto, calibración). Código en `pipeline/historial.py`; los archivos viajan en la rama `datos`.
 - **Mi lista:** activos favoritos guardados en el navegador. **Cuenta:** reservado para el futuro inicio de sesión.
 
 Cubre ~220 activos: índices, ETFs, acciones de EE.UU., globales y chilenas, salmoneras, materias primas, bonos, divisas, cripto, cripto nuevas y memecoins.

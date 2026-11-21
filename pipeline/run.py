@@ -21,7 +21,7 @@ import pandas as pd
 
 from . import analytics as A
 from . import data as D
-from . import narrative, portfolio, sessions
+from . import historial, narrative, portfolio, sessions
 from .universe import CLASES, construir_universo
 
 DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
@@ -209,6 +209,14 @@ def main(argv=None):
         "calibracion": calib, "fng": ctx["fng"], "funding": ctx["funding"],
     }
     escribir(out / "latest.json", latest)
+    if not args.demo:
+        try:
+            pub, est, pend = historial.actualizar(Path(args.prev).parent if args.prev else None, filas)
+            escribir(out / "historial.json", pub)
+            escribir(out / "historial_estado.json", {k: est[k] for k in est})
+            escribir(out / "pendientes.json", pend)
+        except Exception as e:  # noqa: BLE001  (el historial nunca debe tumbar el informe)
+            print(f"Aviso: no se pudo actualizar el historial: {e}")
     print(f"Listo: {len(filas)} activos, {len(sin_datos)} sin datos. Archivos en {out}/")
     return 0
 
