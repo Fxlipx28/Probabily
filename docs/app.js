@@ -262,10 +262,28 @@ function vHoy() {
     ${rkc('Menor riesgo', d.rankings.menor_riesgo.slice(0, 4).map(act).filter(Boolean), 'vol')}
     ${rkc('Mayor riesgo', d.rankings.mayor_riesgo.slice(0, 4).map(act).filter(Boolean), 'vol')}</div>`;
   h += `<div class="card sm"><h2>Mapa del día <span class="sub">variación en el último día</span></h2><div id="mapa">${mapaHTML()}</div></div>`;
-  h += `<details class="card sm"><summary>Más detalles del informe</summary><div class="grid2" style="margin-top:10px">${d.informe.secciones.map(s => `<div><h3>${esc(s.titulo)}</h3><ul class="tight">${s.items.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div><div class="note">${esc(d.informe.aviso)}</div></details>`;
+  h += `<details class="card sm" id="inf"><summary>Informe completo <span class="sub">${esc(d.informe.titulo)}</span></summary><div id="infb">${informeHTML()}</div></details>`;
   $('#vista').innerHTML = h;
   const ligar = () => $$('.chip[data-mapa]').forEach(c => c.onclick = () => { S.mapa = c.dataset.mapa; $('#mapa').innerHTML = mapaHTML(); ligar(); });
   ligar();
+  const ligarInf = () => $$('[data-inf]').forEach(c => c.onclick = () => { S.inf = +c.dataset.inf; $('#infb').innerHTML = informeHTML(); ligarInf(); });
+  ligarInf();
+}
+const INF_CORTO = ['Qué mirar', 'Más atractivo', 'Buen puntaje, bajo riesgo', 'Riesgo', 'Cripto', 'Confiabilidad', 'Límites'];
+const INF_ICO = ['👁', '⭐', '⚖️', '⚠️', '₿', '🎯', 'ℹ️'];
+function infItem(x) {
+  x = String(x);
+  const m = x.match(/^((?:[^:.(]|\([^)]*\)){2,60}):\s+(.*)$/s);
+  const col = t => esc(t).replace(/([+\-−]\d+(?:[.,]\d+)?%)/g, (q) => `<span class="${/^\+/.test(q) ? 'pos' : 'neg'}">${q}</span>`).replace(/(\d+\/100)/g, '<b>$1</b>');
+  if (!m) return `<li>${col(x)}</li>`;
+  const partes = m[2].split(/;\s+|,\s+(?=probabilidad|riesgo|tendencia)|\.\s+(?=[A-ZÁÉÍÓÚ])/).filter(Boolean);
+  return `<li class="ii"><b class="ih">${esc(m[1])}</b>${partes.length > 1 ? `<div class="chips2">${partes.map(p => `<span>${col(p.replace(/\.$/, ''))}</span>`).join('')}</div>` : `<span class="it">${col(m[2])}</span>`}</li>`;
+}
+function informeHTML() {
+  const sec = S.d.informe.secciones, k = Math.min(S.inf || 0, sec.length - 1), s = sec[k];
+  return `<div class="infnav">${sec.map((q, n) => `<button class="chip ${n === k ? 'on' : ''}" data-inf="${n}">${INF_ICO[n] || '•'} ${INF_CORTO[n] || esc(q.titulo.slice(0, 24))}</button>`).join('')}</div>
+    <div class="infsec"><h3>${INF_ICO[k] || ''} ${esc(s.titulo)}</h3><ul class="inflist">${s.items.map(infItem).join('')}</ul></div>
+    <div class="note">${esc(S.d.informe.aviso)}</div>`;
 }
 
 // ---------------------------------------------------------------- MAÑANA
