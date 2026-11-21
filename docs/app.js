@@ -280,14 +280,14 @@ function alertasHTML(l) {
 function resumenHTML(res) {
   const fr = res.join(' ').split(/\.\s+(?=[A-ZÁÉÍÓÚ])/).map(s => s.replace(/\.$/, '')).filter(Boolean).slice(0, 4);
   const num = t => { let m = t.match(/\((\d+)\/100\)/) || t.match(/(?:subir|alcista)\D{0,12}?(\d+)%/) || t.match(/^[^:]*:\s*(\d+)%/); return m ? +m[1] : null; };
-  const cl = v => v >= 60 ? 'up' : v <= 40 ? 'dn' : 'wn';
+  const cl = v => v >= 50 ? 'up' : 'dn';
   return `<div class="rsm">${fr.map(s => {
     const m = s.match(/^([^:]{2,30}):\s+(.*)$/) || s.match(/^(.{2,24}?)\s+(?:está|en)\s+(.*)$/), lab = m ? m[1] : s.split(' ').slice(0, 2).join(' '), txt = m ? m[2] : s;
     let v = num(txt) ?? num(s), c = null;
     const vx = /VIX/i.test(lab) && txt.match(/(\d+(?:[.,]\d+)?)/), md = txt.match(/(\d+(?:[.,]\d+)?)%\s+(bajo|sobre|por encima de|por debajo de)/);
     let ex = '', t2 = null;
     const A = tk => S.d.activos.find(q => q.ticker === tk);
-    if (vx) { const q = A('^VIX'), n = q ? q.precio : parseFloat(vx[1].replace(',', '.')); v = n * 2; c = n < 20 ? 'up' : n < 28 ? 'wn' : 'dn';
+    if (vx) { const q = A('^VIX'), n = q ? q.precio : parseFloat(vx[1].replace(',', '.')); v = n * 2; c = n < 20 ? 'up' : 'dn';
       const niv = n < 15 ? 'muy bajo' : n < 20 ? 'bajo' : n < 28 ? 'moderado' : n < 35 ? 'alto' : 'extremo';
       t2 = `<b>${nf(n, 1)}</b> puntos · nivel <b>${niv}</b>` + (q && q.d1 != null ? ` · hoy <span class="${q.d1 >= 0 ? 'neg' : 'pos'}">${pct(q.d1, 1)}</span>` : '');
       ex = 'Mide cuánto movimiento espera el mercado de EE.UU. Bajo 20 = calma, sobre 30 = tensión. Si sube, los inversionistas se protegen.'; }
@@ -314,7 +314,7 @@ function infItem(x) {
   if (!m) return `<li>${col(x)}</li>`;
   const partes = m[2].split(/;\s+|,\s+(?=probabilidad|riesgo|tendencia)|\.\s+(?=[A-ZÁÉÍÓÚ])/).filter(Boolean);
   const pj = x.match(/puntaje (\d+)\/100/), pr = x.match(/subir en un mes (\d+)%/);
-  const bar = pj ? `<div class="rbar"><i class="${+pj[1] >= 70 ? 'up' : +pj[1] >= 40 ? 'wn' : 'dn'}" style="width:${pj[1]}%"></i></div>` : '';
+  const bar = pj ? `<div class="rbar"><i class="${+pj[1] >= 50 ? 'up' : 'dn'}" style="width:${pj[1]}%"></i></div>` : '';
   return `<li class="ii"><b class="ih">${esc(m[1])}${pj ? `<span class="big">${pj[1]}</span>` : ''}</b>${bar}${partes.length > 1 ? `<div class="chips2">${partes.map(p => `<span>${col(p.replace(/\.$/, ''))}</span>`).join('')}</div>` : `<span class="it">${col(m[2])}</span>`}</li>`;
 }
 function informeHTML() {
