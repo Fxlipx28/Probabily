@@ -232,7 +232,6 @@ _FILAS = {
         ("HBAR-USD", "Hedera", "Cripto", ""),
     ],
     "Cripto nuevas": [
-        ("TON11419-USD", "Toncoin", "Cripto", ""),
         ("SUI20947-USD", "Sui", "Cripto", ""),
         ("APT21794-USD", "Aptos", "Cripto", ""),
         ("ARB11841-USD", "Arbitrum", "Cripto", ""),
