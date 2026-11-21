@@ -4,7 +4,7 @@ Esto es una hoja de ruta práctica, no asesoría legal ni financiera. Antes de c
 
 ## 1. Qué es el producto (y qué NO)
 
-**Lector de Mercado** muestra, para cientos de activos del mundo, la probabilidad de que suba o baje, el riesgo, noticias y un radar cripto, en español y con honestidad sobre cuánto se equivoca.
+**Probabily** muestra, para cientos de activos del mundo, la probabilidad de que suba o baje, el riesgo, noticias y un radar cripto, en español y con honestidad sobre cuánto se equivoca.
 
 - **Diferencial real:** probabilidades *calibradas* y la prueba pública de cuánto fallan. Casi todos los competidores prometen señales; este dice "la dirección de mañana es casi cara o sello, pero el riesgo sí se puede medir".
 - **Público inicial:** inversionistas minoristas hispanohablantes (Chile y Latam) que operan en XTB, Binance, Buda, etc. y no saben análisis técnico.
