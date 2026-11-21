@@ -526,10 +526,11 @@ function vPort() {
     <div class="grid2"><div><h3>Cómo se habría comportado (semanal, base 100)</h3><div class="cv s"><canvas id="cv"></canvas></div></div>
     <div><h3>Resultados simulados a 1 mes</h3><div class="cv s"><canvas id="hp"></canvas></div></div></div>
     <h3>Composición</h3><div class="scroll"><table><thead><tr><th class="l">Activo</th><th class="l">Clase</th><th>Peso</th><th>Riesgo</th><th>Puntaje</th></tr></thead><tbody>
-    ${p.pesos.map(w => `<tr style="cursor:pointer" onclick="location.hash='#sim/${esc(w.id)}'"><td class="l">${esc(w.nombre)}</td><td class="l">${esc(w.clase)}</td><td><b>${nf(w.peso * 100, 1)}%</b></td><td><span class="badge r-${w.riesgo}">${w.riesgo}</span></td><td>${nf(w.score, 0)}</td></tr>`).join('')}</tbody></table></div>
+    ${p.pesos.map(w => `<tr style="cursor:pointer" data-id="${esc(w.id)}"><td class="l">${esc(w.nombre)}</td><td class="l">${esc(w.clase)}</td><td><b>${nf(w.peso * 100, 1)}%</b></td><td><span class="badge r-${w.riesgo}">${w.riesgo}</span></td><td>${nf(w.score, 0)}</td></tr>`).join('')}</tbody></table></div>
     ${p.excluidos.length ? `<p class="muted" style="font-size:12.5px">Quedaron fuera por tener muy poca historia: ${p.excluidos.map(esc).join(', ')}.</p>` : ''}
     <div class="note">La simulación vuelve a sortear semanas reales de los últimos ${nf(p.n_semanas / 52, 1)} años manteniendo cómo se mueven los activos entre sí, y descuenta el 75% de la tendencia pasada. Tu portafolio real en XTB y Binance será distinto: úsalo como referencia de cuánto riesgo asume cada perfil.</div></div>`;
   $$('.btn[data-p]').forEach(b => b.onclick = () => { S.perfil = b.dataset.p; kill(); vPort(); });
+  $$('tr[data-id]').forEach(tr => tr.onclick = () => go(tr.dataset.id));
   const cu = p.curva;
   mk('cv', {type: 'line', data: {labels: cu.fechas, datasets: [{label: 'Portafolio ' + S.perfil, data: cu.cartera, borderColor: COL.acc, borderWidth: 2, pointRadius: 0}]
     .concat(cu.ref ? [{label: 'S&P 500', data: cu.ref, borderColor: COL.mut, borderWidth: 1.3, pointRadius: 0}] : [])},
