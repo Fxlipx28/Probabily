@@ -101,6 +101,7 @@ def main(argv=None):
     if df.empty:
         print("No se pudo descargar ningún dato. Se mantiene el informe anterior.")
         return 1
+    df = df.where(df > 0)  # precios en cero o negativos (datos malos o futuros en 2020) se tratan como faltantes
     rng = np.random.default_rng(int(ahora.timestamp()) % (2 ** 32))
     por_id_u = {a["id"]: a for a in universo}
 

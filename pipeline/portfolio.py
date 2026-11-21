@@ -47,7 +47,7 @@ def armar(filas, df, rng, n_sims=10000):
         ids = list(pesos)
         excluidos = []
         while True:
-            R = semanal[ids].pct_change().dropna()
+            R = semanal[ids].pct_change().replace([np.inf, -np.inf], np.nan).dropna()
             if len(R) >= MIN_SEMANAS or len(ids) <= 1:
                 break
             corto = min(ids, key=lambda i: semanal[i].dropna().shape[0])
