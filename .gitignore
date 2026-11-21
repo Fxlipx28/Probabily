@@ -1,2 +1,4 @@
 informe-mercado.html
 __pycache__/
+.venv/
+*.pyc
