@@ -35,7 +35,7 @@ Para detener todo: borra los dos archivos de `.github/workflows/` o desactívalo
 
 1. **Activar la página:** `Settings → Pages → Deploy from a branch → main → /docs`.
 2. **Primer informe real:** `Actions → Actualizar informe de mercado → Run workflow` (deja `manual`), y lo mismo con `Actualizar noticias y radar cripto`.
-3. La página queda en `https://<tu-usuario>.github.io/Proyecto-1/`.
+3. La página queda en `https://<tu-usuario>.github.io/Probabily/`.
 
 GitHub puede retrasar varios minutos las ejecuciones programadas y desactiva los workflows de un repositorio sin actividad por 60 días (se reactivan a mano).
 
