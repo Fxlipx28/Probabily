@@ -283,9 +283,12 @@ function resumenHTML(res) {
   const cl = v => v >= 60 ? 'up' : v <= 40 ? 'dn' : 'wn';
   return `<div class="rsm">${fr.map(s => {
     const m = s.match(/^([^:]{2,30}):\s+(.*)$/) || s.match(/^(.{2,24}?)\s+(?:está|en)\s+(.*)$/), lab = m ? m[1] : s.split(' ').slice(0, 2).join(' '), txt = m ? m[2] : s;
-    const v = num(txt) ?? num(s);
+    let v = num(txt) ?? num(s), c = null;
+    const vx = /VIX/i.test(lab) && txt.match(/(\d+(?:[.,]\d+)?)/), md = txt.match(/(\d+(?:[.,]\d+)?)%\s+(bajo|sobre|por encima de|por debajo de)/);
+    if (vx) { const n = parseFloat(vx[1].replace(',', '.')); v = n * 2; c = n < 20 ? 'up' : n < 28 ? 'wn' : 'dn'; }
+    else if (md) { const n = parseFloat(md[1].replace(',', '.')); v = Math.max(8, n * 6); c = /bajo|debajo/.test(md[2]) ? 'dn' : 'up'; }
     const t = esc(txt).replace(/(\d+(?:[.,]\d+)?(?:\/100|%)?)/g, '<b>$1</b>');
-    return `<div class="rs"><div class="rl">${esc(lab)}</div><div class="rt">${t}</div>${v !== null ? `<div class="rbar"><i class="${cl(v)}" style="width:${Math.min(100, v)}%"></i></div>` : ''}</div>`;
+    return `<div class="rs"><div class="rl">${esc(lab)}</div><div class="rt">${t}</div>${v !== null ? `<div class="rbar"><i class="${c || cl(v)}" style="width:${Math.min(100, v)}%"></i></div>` : ''}</div>`;
   }).join('')}</div>`;
 }
 const INF_CORTO = ['Qué mirar', 'Más atractivo', 'Buen puntaje, bajo riesgo', 'Riesgo', 'Cripto', 'Confiabilidad', 'Límites'];
