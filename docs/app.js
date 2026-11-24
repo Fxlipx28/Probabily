@@ -16,17 +16,29 @@ const RAPIDO = LOCAL ? ['data/rapido.json'] : [CFG.rapido, 'data/rapido.json'].f
 const HZ = {'1': 'Mañana (1 día)', '7': '1 semana', '30': '1 mes'};
 const HZS = {'1': '1 día', '7': '1 semana', '30': '1 mes'};
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const lsG = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsS = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* sin almacenamiento */ } };
+const temaPref = () => ['claro', 'oscuro', 'sistema'].includes(lsG('lm_tema')) ? lsG('lm_tema') : 'sistema';
+const temaReal = () => { const p = temaPref(); return p === 'sistema' ? (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro') : p; };
 const COL = {up: '#2E9E6B', dn: '#C94A44', acc: '#2F80B8', blue: '#2A6CA0', vi: '#2F80B8', mut: '#5F6B66'};
 
 const S = {d: null, r: null, base: BASES[0], live: {}, filtro: 'Todas', orden: {k: 'score', dir: -1}, busca: '', perfil: 'Balanceado', calH: '30',
-  mapa: 'Mundo', hz: '1', mqOrden: 'sube', mqId: null, nCat: 'Todas', nSent: 'Todas', nBusca: '', nAct: null, fav: [], vista: 'hoy'};
+  mapa: 'Mundo', hz: ['1', '7', '30'].includes(lsG('lm_hz')) ? lsG('lm_hz') : '1', mqOrden: 'sube', mqId: null, nCat: 'Todas', nSent: 'Todas', nBusca: '', nAct: null, fav: [], vista: 'hoy'};
 try { S.fav = JSON.parse(localStorage.getItem('lm_fav') || '[]'); } catch (e) { S.fav = []; }
 const saveFav = () => { try { localStorage.setItem('lm_fav', JSON.stringify(S.fav)); } catch (e) { /* sin almacenamiento */ } };
 const isFav = id => S.fav.includes(id);
 const toggleFav = id => { S.fav = isFav(id) ? S.fav.filter(x => x !== id) : [...S.fav, id]; saveFav(); };
 
-Chart.defaults.color = '#5F6B66';
-Chart.defaults.borderColor = 'rgba(31,43,38,.08)';
+function aplicarTema() {
+  const t = temaReal(), o = t === 'oscuro';
+  document.documentElement.dataset.tema = t;
+  const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = o ? '#0E1216' : '#D6E8F4';
+  Object.assign(COL, o ? {up: '#34C38F', dn: '#EF6A67', acc: '#5BA4CF', blue: '#6DB2DB', vi: '#5BA4CF', mut: '#9AA7B2'} : {up: '#2E9E6B', dn: '#C94A44', acc: '#2F80B8', blue: '#2A6CA0', vi: '#2F80B8', mut: '#5F6B66'});
+  Chart.defaults.color = COL.mut;
+  Chart.defaults.borderColor = o ? 'rgba(255,255,255,.09)' : 'rgba(31,43,38,.08)';
+}
+aplicarTema();
+if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (temaPref() === 'sistema') { aplicarTema(); if (S.d) ruta(true); } });
 Chart.defaults.font.family = 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
 Chart.defaults.animation = false;
 Chart.defaults.maintainAspectRatio = false;
@@ -58,6 +70,7 @@ async function getJSON(rel, bases = BASES) {
 
 // ---------------------------------------------------------------- iconos / navegación
 const IC = {
+  ajustes: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
   hoy: 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10',
   manana: 'M12 3v3M5 12H3M21 12h-2M6.3 6.3L4.9 4.9M17.7 6.3l1.4-1.4M7 16a5 5 0 1 1 10 0M3 20h18',
   noticias: 'M4 5h13v14H6a2 2 0 0 1-2-2V5zM17 9h3v8a2 2 0 0 1-2 2M8 9h5M8 13h5',
@@ -76,7 +89,7 @@ const IC = {
 const NAV = [
   ['Panel', [['hoy', 'Hoy'], ['manana', 'Mañana', 'NUEVO'], ['noticias', 'Noticias', 'NUEVO'], ['radar', 'Radar cripto', 'NUEVO'], ['hist', 'Historial', 'ÚNICO']]],
   ['Análisis', [['mercados', 'Mercados'], ['sim', 'Simulador'], ['estac', 'Estacionalidad'], ['corr', 'Correlaciones'], ['port', 'Portafolio'], ['calib', 'Calibración']]],
-  ['Mío', [['lista', 'Mi lista'], ['cuenta', 'Cuenta']]],
+  ['Mío', [['lista', 'Mi lista'], ['ajustes', 'Ajustes'], ['cuenta', 'Cuenta']]],
   ['Info', [['metodo', 'Método']]],
 ];
 $('#nav').innerHTML = NAV.map(([g, items]) => `<div class="ng">${g}</div>` + items.map(([k, t, b]) =>
@@ -98,7 +111,7 @@ function gauge(t, sm) {
   const L = Math.PI * 90, f = Math.max(0, Math.min(100, t.valor)) / 100;
   return `<h2>Termómetro del mercado</h2><div class="gwrap">
     <svg class="gsvg" viewBox="0 0 200 118"><defs><linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="#C94A44"/><stop offset=".5" stop-color="#D98A2B"/><stop offset="1" stop-color="#2E9E6B"/></linearGradient></defs>
-      <path d="M10 104A90 90 0 0 1 190 104" fill="none" stroke="rgba(31,43,38,.09)" stroke-width="16" stroke-linecap="round"/>
+      <path d="M10 104A90 90 0 0 1 190 104" fill="none" stroke="rgba(128,140,150,.22)" stroke-width="16" stroke-linecap="round"/>
       <path d="M10 104A90 90 0 0 1 190 104" fill="none" stroke="url(#gg)" stroke-width="16" stroke-linecap="round" stroke-dasharray="${(L * f).toFixed(1)} ${L.toFixed(1)}"/>
       <text class="gtx" x="100" y="92" text-anchor="middle">${t.valor}</text><text x="100" y="112" text-anchor="middle" fill="#5F6B66" font-size="12">${esc(t.etiqueta)}</text></svg>
     <div><div class="glab">0 = miedo · 100 = apetito por riesgo</div></div></div>
@@ -189,7 +202,7 @@ function ruta(keep) {
   S.vista = vista;
   if (!keep && window.__vista) window.__vista(vista);
   $$('#nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + vista));
-  const V = {hoy: vHoy, manana: vManana, noticias: vNoticias, radar: vRadar, mercados: vMercados, sim: vSim, estac: vEstac, corr: vCorr, port: vPort, calib: vCalib, hist: vHist, lista: vLista, cuenta: vCuenta, metodo: vMetodo};
+  const V = {hoy: vHoy, manana: vManana, noticias: vNoticias, radar: vRadar, mercados: vMercados, sim: vSim, estac: vEstac, corr: vCorr, port: vPort, calib: vCalib, hist: vHist, lista: vLista, cuenta: vCuenta, ajustes: vAjustes, privacidad: vPriv, terminos: vTerm, metodo: vMetodo};
   (V[vista] || vHoy)(arg);
   if (!keep) window.scrollTo(0, 0);
 }
@@ -253,7 +266,7 @@ function vHoy() {
   h += `<div class="grid3 eq">
     <div class="card sm glow"><div class="fill">${gauge(tg, true)}</div></div>
     <div class="card sm"><h2>Resumen</h2><div class="fill">${resumenHTML(d.informe.resumen)}</div></div>
-    <div class="card sm"><h2>Alertas <span class="sub">señales más consistentes · mañana</span></h2><div class="fill">${senalesHTML(d.activos)}}</div></div></div>
+    <div class="card sm"><h2>Alertas <span class="sub">señales más consistentes · mañana</span></h2><div class="fill">${senalesHTML(d.activos)}</div></div></div>
   <div class="grid2 eq">
     <div class="card sm glow"><h2>Mañana en una mirada <span class="sub">prob. a 1 día</span></h2>
       <div class="grid2 in fill"><div><h3 class="pos">▲ Suben</h3>${top5(1).map(a => rk(a, pc0(a.mc['1'].p_sube))).join('')}</div><div><h3 class="neg">▼ Bajan</h3>${top5(-1).map(a => rk(a, pc0(1 - a.mc['1'].p_sube))).join('')}</div></div>
@@ -759,7 +772,6 @@ function vLista() {
 
 // ---------------------------------------------------------------- CUENTA
 function vCuenta() {
-  setTimeout(pintaApp, 0);
   $('#vista').innerHTML = hero('Cuenta', `Próximamente: <span class="grad">tu cuenta</span>`, 'Hoy la página es abierta y no pide registro. Esta sección muestra hacia dónde va el producto.') + `
     <div class="grid2"><div class="card glow"><h2>Ingresar (aún no disponible)</h2>
       <div class="lock"><div class="sel"><input type="email" placeholder="correo@ejemplo.com" disabled></div><div class="sel"><input type="password" placeholder="contraseña" disabled></div><div class="btns"><button class="btn pri" disabled>Entrar</button><button class="btn" disabled>Crear cuenta</button></div></div>
@@ -767,16 +779,72 @@ function vCuenta() {
     <div class="card"><h2>Qué traerá una cuenta</h2><ul>
       <li>Mi lista sincronizada entre computador, tablet y celular.</li><li>Alertas por correo o Telegram: “avísame si BTC cae más de 5%” o “si sale una noticia de Nvidia”.</li>
       <li>Portafolio propio (tus posiciones de XTB y Binance cargadas a mano o por archivo) con riesgo y probabilidades calculados sobre lo que realmente tienes.</li><li>Historial de lo que decía el modelo cada día y cómo resultó.</li><li>Plan gratuito con lo esencial y plan Pro con alertas ilimitadas y más activos.</li></ul></div></div>
-    <div class="card glow"><h2>App y avisos</h2>
-      <p>Instálala como app en tu celular o computador y recibe avisos de señales nuevas y de movimientos fuertes en <a href="#lista">Mi lista</a>. No usa cookies ni pide registro.</p>
-      <div class="btns" id="appbtns"></div>
-      <ul class="tight">
-        <li><b>Android (Chrome):</b> botón “Instalar app”, o menú ⋮ → <i>Instalar aplicación</i>.</li>
-        <li><b>iPhone / iPad (Safari):</b> botón Compartir → <i>Agregar a pantalla de inicio</i>. Los avisos en iPhone solo funcionan con la app ya instalada (iOS 16.4 o superior).</li>
-        <li><b>Computador (Chrome o Edge):</b> ícono de instalar al final de la barra de direcciones.</li>
-      </ul>
-      <p class="muted" style="font-size:13px">Los avisos llegan mientras la app esté abierta o en segundo plano. Con la app cerrada, el navegador decide si deja revisar (en Android a veces sí, en iPhone y computador no). Para recibirlos siempre, usa también el canal de Telegram.</p></div>
     <div class="note info">Esta página no vende señales de compra/venta ni promete rentabilidad. Su valor es mostrar riesgo y probabilidades de forma clara y honesta, incluyendo cuánto fallan.</div>`;
+}
+
+
+// ---------------------------------------------------------------- AJUSTES + LEGAL
+const segHTML = (id, opts, cur) => `<div class="seg" id="${id}">${opts.map(([v, t]) => `<button data-v="${v}" class="${v === cur ? 'on' : ''}">${t}</button>`).join('')}</div>`;
+const togHTML = (id, on) => `<button class="tog ${on ? 'on' : ''}" id="${id}" role="switch" aria-checked="${on}"></button>`;
+function vAjustes() {
+  const fila = (t, s, ctl) => `<div class="setrow"><div class="sl"><b>${t}</b><small>${s}</small></div>${ctl}</div>`;
+  $('#vista').innerHTML = hero('Ajustes', `Personaliza <span class="grad">Probabily</span>`, 'Se guardan solo en este dispositivo.') + `
+    <div class="grid2">
+    <div class="card"><h2>Apariencia</h2>
+      ${fila('Tema', 'Claro, oscuro o el mismo de tu dispositivo.', segHTML('st', [['claro', 'Claro'], ['oscuro', 'Oscuro'], ['sistema', 'Sistema']], temaPref()))}
+      ${fila('Horizonte por defecto', 'En la vista Mañana: 1 día, 1 semana o 1 mes.', segHTML('sh', [['1', '1 día'], ['7', '1 semana'], ['30', '1 mes']], S.hz))}</div>
+    <div class="card glow"><h2>App y avisos</h2>
+      <p class="muted" style="margin:0 0 8px">Instálala como app y recibe avisos. No usa cookies ni pide registro.</p>
+      <div class="btns" id="appbtns"></div>
+      ${fila('Señales nuevas', 'Aviso cuando sale un informe nuevo.', togHTML('tsen', lsGet('lm_av_sen') !== '0'))}
+      ${fila('Movimientos de Mi lista', 'Aviso si algo de tu lista se mueve fuerte en el día.', togHTML('tfav', lsGet('lm_av_fav') !== '0'))}
+      ${fila('Umbral de movimiento', 'Desde qué variación diaria avisar.', segHTML('sum', [['2', '2%'], ['3', '3%'], ['5', '5%']], String(+lsGet('lm_umbral') || 3)))}
+      <details style="margin-top:8px"><summary class="muted">Cómo instalarla</summary><ul class="tight">
+        <li><b>Android (Chrome):</b> botón “Instalar app” o menú ⋮ → Instalar aplicación.</li>
+        <li><b>iPhone / iPad (Safari):</b> Compartir → Agregar a pantalla de inicio. Los avisos solo funcionan con la app instalada (iOS 16.4+).</li>
+        <li><b>Computador (Chrome o Edge):</b> ícono de instalar en la barra de direcciones.</li></ul>
+      <p class="muted" style="font-size:13px">Los avisos llegan con la app abierta o en segundo plano. Con la app cerrada depende del navegador (a veces en Android; no en iPhone ni computador).</p></details></div>
+    <div class="card"><h2>Tus datos en este dispositivo</h2>
+      ${fila('Mi lista', `${S.fav.length} activo(s) guardado(s).`, '<button class="btn" id="blis">Vaciar</button>')}
+      ${fila('Restablecer ajustes', 'Tema, avisos y preferencias vuelven a lo original.', '<button class="btn" id="bres">Restablecer</button>')}
+      <p class="muted" style="font-size:13px">No hay cuenta ni servidor propio: nada de esto sale de tu dispositivo.</p></div>
+    <div class="card"><h2>Información</h2>
+      <ul class="tight"><li><a href="#privacidad">Política de privacidad</a></li><li><a href="#terminos">Términos de uso</a></li><li><a href="#metodo">Cómo funciona (método)</a></li><li><a href="${esc(CFG.repo || '#')}" target="_blank" rel="noopener noreferrer">Código fuente en GitHub</a></li>
+      <li>Contacto: <a href="mailto:vaykief@gmail.com">vaykief@gmail.com</a></li></ul>
+      <p class="muted" style="font-size:13px">© 2026 Probabily · Creado por Vaykief</p></div></div>`;
+  const seg = (id, fn) => $$('#' + id + ' button').forEach(b => b.onclick = () => { fn(b.dataset.v); $$('#' + id + ' button').forEach(x => x.classList.toggle('on', x === b)); });
+  seg('st', v => { lsSet('lm_tema', v); aplicarTema(); vAjustes(); });
+  seg('sh', v => { S.hz = v; lsSet('lm_hz', v); });
+  seg('sum', v => lsSet('lm_umbral', v));
+  const tg = (id, k) => { $('#' + id).onclick = e => { const on = !e.currentTarget.classList.contains('on'); lsSet(k, on ? '1' : '0'); e.currentTarget.classList.toggle('on', on); e.currentTarget.setAttribute('aria-checked', on); }; };
+  tg('tsen', 'lm_av_sen'); tg('tfav', 'lm_av_fav');
+  $('#blis').onclick = () => { if (confirm('¿Vaciar Mi lista?')) { S.fav = []; saveFav(); vAjustes(); } };
+  $('#bres').onclick = () => { if (confirm('¿Restablecer ajustes?')) { ['lm_tema', 'lm_hz', 'lm_av_sen', 'lm_av_fav', 'lm_umbral', 'lm_avisos'].forEach(k => { try { localStorage.removeItem(k); } catch (e) { /* nada */ } }); S.hz = '1'; aplicarTema(); vAjustes(); } };
+  pintaApp();
+}
+function vPriv() {
+  $('#vista').innerHTML = hero('Legal', `Política de <span class="grad">privacidad</span>`, 'Última actualización: 24 de noviembre de 2026') + `<div class="card legal">
+    <h3>Resumen</h3><p>Probabily no tiene cuentas, no te pide datos personales y no usa cookies propias. Lo que configuras (tema, avisos, tu lista) se guarda solo en tu dispositivo.</p>
+    <h3>Qué se guarda en tu dispositivo</h3><p>Usamos el almacenamiento local del navegador para recordar Mi lista, el tema, tus preferencias de avisos y el horizonte por defecto. Puedes borrarlo en Ajustes o limpiando los datos del sitio. Nosotros no recibimos esa información.</p>
+    <h3>Servicios de terceros</h3><ul>
+      <li><b>GitHub</b> aloja la página y los datos de mercado. Al abrirla, GitHub puede ver tu dirección IP, como cualquier sitio web.</li>
+      <li><b>TradingView</b> muestra el gráfico del activo que abres. Al cargarlo, TradingView recibe tu IP y puede usar sus propias cookies según su política.</li>
+      <li><b>Binance</b> entrega precios de cripto en vivo mediante una conexión directa desde tu navegador, por lo que también ve tu IP.</li>
+      <li><b>Analítica de visitas (opcional)</b>: si está activada, usamos GoatCounter o Plausible, que cuentan visitas sin cookies y sin perfilar personas.</li></ul>
+    <h3>Avisos</h3><p>Los avisos se generan en tu dispositivo con el permiso de notificaciones de tu navegador. Puedes quitarlo cuando quieras desde Ajustes o desde la configuración del navegador. Si en el futuro ofrecemos avisos por Telegram u otro canal, serán opcionales y se explicarán aquí.</p>
+    <h3>Menores y tus derechos</h3><p>El servicio es informativo y no está dirigido a menores de edad. Como no guardamos datos personales, no tenemos información tuya que corregir o eliminar; si tienes dudas, escríbenos.</p>
+    <h3>Cambios y contacto</h3><p>Si esta política cambia, actualizaremos la fecha de arriba. Contacto: <a href="mailto:vaykief@gmail.com">vaykief@gmail.com</a>.</p></div>`;
+}
+function vTerm() {
+  $('#vista').innerHTML = hero('Legal', `Términos de <span class="grad">uso</span>`, 'Última actualización: 24 de noviembre de 2026') + `<div class="card legal">
+    <h3>Qué es Probabily</h3><p>Una herramienta informativa que muestra probabilidades estimadas con modelos estadísticos sobre datos históricos, además de noticias y un radar cripto. No es asesoría financiera, de inversión, tributaria ni legal.</p>
+    <h3>Sin garantía de resultados</h3><p>Las probabilidades son estimaciones y pueden fallar; el pasado no asegura el futuro. El Historial de aciertos muestra cuánto ha acertado el modelo, incluidos sus errores. Puedes perder dinero, especialmente en cripto y activos de alto riesgo.</p>
+    <h3>Tus decisiones</h3><p>Cualquier decisión de inversión es tuya y de tu responsabilidad. Probabily no recomienda comprar o vender ningún activo ni ejecuta operaciones. Si necesitas asesoría, consulta con un profesional autorizado.</p>
+    <h3>Datos de terceros</h3><p>Los precios, noticias y otros datos provienen de fuentes de terceros y pueden tener retrasos, errores o interrupciones. No garantizamos que estén completos, actualizados ni disponibles en todo momento.</p>
+    <h3>Uso aceptable</h3><p>No uses el sitio para copiar masivamente sus datos, sobrecargarlo ni intentar vulnerarlo. Los titulares de noticias pertenecen a sus medios y enlazan a la fuente original.</p>
+    <h3>Propiedad</h3><p>El diseño, el código y los modelos de Probabily son de su creador (Vaykief), salvo los componentes de terceros que mantienen sus licencias.</p>
+    <h3>Responsabilidad</h3><p>En la medida permitida por la ley, el creador no responde por pérdidas derivadas del uso de la información o de interrupciones del servicio. Se aplican las leyes de Chile.</p>
+    <h3>Cambios y contacto</h3><p>Podemos actualizar estos términos; la fecha de arriba indica la última versión. Contacto: <a href="mailto:vaykief@gmail.com">vaykief@gmail.com</a>.</p></div>`;
 }
 
 // ---------------------------------------------------------------- MÉTODO
@@ -834,14 +902,15 @@ function avisar() {
   if (prev !== k) {
     lsSet('lm_ns', k);
     const s = senalesTop(S.d.activos).slice(0, 3);
-    if (prev && s.length) mostrarAviso('Probabily: señales nuevas', s.map(x => `${x.sube ? '▲' : '▼'} ${x.a.nombre} ${Math.round((x.sube ? x.p1 : 1 - x.p1) * 100)}%`).join('\n'), 'senales', './#hoy');
+    if (prev && s.length && lsGet('lm_av_sen') !== '0') mostrarAviso('Probabily: señales nuevas', s.map(x => `${x.sube ? '▲' : '▼'} ${x.a.nombre} ${Math.round((x.sube ? x.p1 : 1 - x.p1) * 100)}%`).join('\n'), 'senales', './#hoy');
   }
-  const hoy = new Date().toISOString().slice(0, 10);
-  S.fav.map(act).filter(a => a && a.d1 != null && Math.abs(a.d1) >= 0.03).forEach(a => {
+  if (lsGet('lm_av_fav') === '0') return;
+  const hoy = new Date().toISOString().slice(0, 10), um = (+lsGet('lm_umbral') || 3) / 100;
+  S.fav.map(act).filter(a => a && a.d1 != null && Math.abs(a.d1) >= um).forEach(a => {
     const kk = 'lm_av_' + a.id + '_' + hoy;
     if (lsGet(kk)) return;
     lsSet(kk, '1');
-    mostrarAviso(`${a.nombre} ${a.d1 > 0 ? 'sube' : 'baja'} ${pct(a.d1, 1)}`, `Se mueve más de 3% hoy. Toca para ver su simulación.`, 'fav-' + a.id, './#sim/' + a.id);
+    mostrarAviso(`${a.nombre} ${a.d1 > 0 ? 'sube' : 'baja'} ${pct(a.d1, 1)}`, `Se mueve más de ${Math.round(um * 100)}% hoy. Toca para ver su simulación.`, 'fav-' + a.id, './#sim/' + a.id);
   });
 }
 function appHTML(compacto) {
