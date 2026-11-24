@@ -337,3 +337,10 @@ details.card summary{font-weight:700;color:var(--tx)}
 .ii-svg{width:17px;height:17px;flex:none}
 .infnav .chip{display:inline-flex;align-items:center;gap:7px}
 .infh{display:flex;align-items:center;gap:9px}
+
+/* textos de ayuda breves */
+.tip{display:flex;gap:9px;align-items:flex-start;margin:0 0 10px;padding:8px 12px;border-radius:10px;background:rgba(47,128,184,.08);border:1px solid rgba(47,128,184,.18);color:var(--mut);font-size:13px;line-height:1.45}
+.tip b{color:var(--tx)}
+.tipi{width:16px;height:16px;flex:none;margin-top:2px;color:var(--cy)}
+.mt{margin:6px 0 0;color:var(--mut);font-size:13.5px;line-height:1.5}
+.card.sm h3{font-size:15px}

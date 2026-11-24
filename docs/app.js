@@ -142,7 +142,7 @@ function newsCard(n) {
     <div class="nm1"><span class="src">${esc(n.fuente)}</span><span>${ago(n.fecha)}</span><span class="cat">${esc(n.categoria)}</span><span class="sent s-${esc(sent)}">${esc(sent)}</span></div>
     <h3><a href="${esc(safeUrl(n.enlace))}" target="_blank" rel="noopener noreferrer">${esc(n.titulo)} <span class="muted">↗</span></a></h3>${tags ? `<div class="nt">${tags}</div>` : ''}</div>`;
 }
-const sinNoticias = () => '<div class="card"><h2>Noticias</h2><p class="muted">Todavía no hay noticias publicadas. Aparecen cuando corre la actualización de noticias (cada 30 minutos en GitHub Actions).</p></div>';
+const sinNoticias = () => '<div class="card"><h2>Noticias</h2><p class="muted">Aún no hay noticias. Se publican cada 10 minutos.</p></div>';
 
 // ---------------------------------------------------------------- carga
 async function cargar() {
@@ -483,7 +483,7 @@ function vNoticias(arg) {
     (!S.nAct || (n.activos || []).includes(S.nAct)) && (!S.nBusca || n.titulo.toLowerCase().includes(S.nBusca.toLowerCase())));
   l.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
   const a0 = S.nAct && act(S.nAct);
-  let h = hero('Noticias', 'Lo que <span class="grad">mueve</span> los mercados', `Titulares recogidos automáticamente de ${r.fuentes_ok.length} fuentes públicas (se actualiza cada 30 minutos, la página lo revisa cada 5). Al tocar una noticia se abre la fuente original.`);
+  let h = hero('Noticias', 'Lo que <span class="grad">mueve</span> los mercados', `${r.fuentes_ok.length} fuentes públicas · se actualiza sola · toca una noticia para abrir la fuente.`);
   h += `<div class="card"><div class="sel"><input id="nq" placeholder="Buscar en titulares…" value="${esc(S.nBusca)}"></div>
     ${chipsH(cats, S.nCat, 'nc')}<div class="chips">${sents.map(s => `<span class="chip ${s === S.nSent ? 'on' : ''}" data-ns="${s}">${s === 'Todas' ? 'Cualquier tono' : s}</span>`).join('')}</div>
     ${a0 ? `<div class="chips"><span class="chip on" id="qa">Activo: ${esc(a0.nombre)} ✕</span></div>` : ''}
@@ -505,9 +505,9 @@ function tablaRadar(lista) {
 }
 function vRadar() {
   const R = S.r && S.r.radar;
-  let h = hero('Radar cripto', 'Lo que se <span class="grad">mueve</span> y lo que está <span class="grad">naciendo</span>', 'Mayores subidas y caídas, tendencias, volumen anormal y tokens recién listados en exchanges descentralizados (DEX).');
+  let h = hero('Radar cripto', 'Lo que se <span class="grad">mueve</span> y lo que está <span class="grad">naciendo</span>', 'Mayores subidas y caídas, tendencias, volumen anormal y tokens nuevos en DEX.');
   if (!R || (!R.ganadores.length && !R.nuevos.length && !R.trending.length)) {
-    $('#vista').innerHTML = h + '<div class="card"><h2>Radar</h2><p class="muted">Aún no hay datos del radar. Se publican junto con las noticias (cada 30 minutos). Si CoinGecko o DEX Screener no respondieron, se reintenta en la siguiente ejecución.</p></div>'; return;
+    $('#vista').innerHTML = h + '<div class="card"><h2>Radar</h2><p class="muted">Aún no hay datos del radar. Se publican junto con las noticias.</p></div>'; return;
   }
   h += `<div class="note bad"><b>Mucho cuidado con lo nuevo.</b> Los tokens recién creados son los de mayor riesgo del mercado: muchos son estafas (“rug pulls”), no se pueden vender, o pierden 90% en horas. Aparecer aquí NO significa que sean seguros ni una recomendación. Si decides mirar uno, revisa liquidez, quién tiene los tokens y usa montos que puedas perder por completo.</div>`;
   h += `<div class="grid2"><div class="card"><h2>Tendencia ahora</h2>${R.trending.length ? `<div class="scroll"><table><thead><tr><th class="l">Cripto</th><th>Ranking</th><th>24 h</th></tr></thead><tbody>${R.trending.map(x => `<tr><td class="l"><b>${esc(x.nombre)}</b> <span class="tag">${esc(x.simbolo)}</span></td><td>${x.rank ?? '—'}</td><td class="${cls(x.cambio24h)}">${pct(x.cambio24h)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Sin datos.</p>'}</div>
@@ -552,8 +552,8 @@ function vMercados() {
     bindFav(draw);
     Object.keys(S.live).forEach(pintarVivo);
   };
-  $('#vista').innerHTML = hero('Mercados', `Todos los activos, <span class="grad">un solo lugar</span>`, `${d.activos.length} activos: índices, acciones del mundo, Chile, salmoneras, materias primas, bonos, divisas y cripto.`) +
-    `<div class="card"><p class="muted" style="margin-top:0">Toca un encabezado para ordenar y una fila para ver su simulación. “P(sube)” sale de la simulación; “Pérdida 95%” es cuánto podría caer en un mal mes (1 de cada 20).</p>
+  $('#vista').innerHTML = hero('Mercados', `Todos los activos, <span class="grad">un solo lugar</span>`, `${d.activos.length} activos: índices, acciones, materias primas, bonos, divisas y cripto.`) +
+    `<div class="card"><p class="tip">${TIP}Toca un encabezado para ordenar y una fila para ver su simulación. <b>P(sube)</b>: probabilidad simulada. <b>Pérdida 95%</b>: caída posible en un mal mes (1 de 20).</p>
     <div class="sel"><input id="q" placeholder="Buscar activo…" value="${esc(S.busca)}"></div>${chipsH(['Todas', ...d.clases], S.filtro, 'c')}<div id="tbl"></div>
     ${d.sin_datos.length ? `<p class="muted" style="font-size:12.5px">Sin datos hoy: ${d.sin_datos.map(x => esc(x.nombre + ' (' + x.ticker + ')')).join(', ')}.</p>` : ''}</div>`;
   $('#q').oninput = e => { S.busca = e.target.value; draw(); };
@@ -626,7 +626,7 @@ async function vSim(id) {
     ${CFG.tradingview === false ? '' : `<h3>Gráfico en vivo <span class="tag">TradingView · puedes cambiar indicadores, zoom y escala</span></h3><div class="cv tv" id="tvbox"></div><p class="muted" style="font-size:12.5px;margin:6px 0 0">Gráfico de TradingView. Si no carga o el símbolo no coincide, <a id="tvlink" target="_blank" rel="noopener noreferrer" style="color:var(--warn)">ábrelo en TradingView ↗</a>.</p>`}
     <h3>Probabilidades de subir y bajar</h3>${mqCard(a)}
     <h3>${d.n_sims.toLocaleString('es-CL')} escenarios posibles a un mes</h3>
-    <p class="muted" style="margin-top:0">Cada línea tenue es uno de 40 escenarios simulados. La banda cubre el 90% de los casos (clara) y el 50% central (oscura); la línea amarilla es el caso del medio. El eje horizontal son días de mercado.</p>
+    <p class="tip">${TIP}40 escenarios simulados. Banda clara: 90% de los casos. Banda oscura: 50% central. Línea gruesa: caso del medio.</p>
     <div class="cv"><canvas id="fan"></canvas></div>
     <h3>Resumen por horizonte</h3>
     <div class="scroll"><table><thead><tr><th class="l">Horizonte</th><th>Sube</th><th>Baja</th><th>Gana mucho</th><th>Pierde mucho</th><th>Rango 90%</th><th>Caso medio</th><th>Pérdida 95%</th><th>Pérdida si es muy malo</th></tr></thead><tbody>
@@ -635,7 +635,7 @@ async function vSim(id) {
     <div class="grid2" style="margin-top:12px"><div><h3>Cómo se reparten los resultados a 1 mes</h3><div class="cv s"><canvas id="hist"></canvas></div></div>
     <div><h3>Último año: precio y medias</h3><div class="cv s"><canvas id="px"></canvas></div></div></div>
     <div class="grid2" style="margin-top:12px"><div><h3>Qué pasó antes en situaciones parecidas</h3><ul>${an('7')}${an('30')}</ul>
-      <p class="muted" style="font-size:12.5px">Es historia, no promesa. Si el rango de confianza incluye la frecuencia general, no hay evidencia de ventaja.</p></div>
+      <p class="tip">${TIP}Es historia, no promesa. Si el rango incluye la frecuencia general, no hay ventaja.</p></div>
     <div><h3>Estacionalidad (retorno mensual promedio)</h3><div class="cv s"><canvas id="se"></canvas></div></div></div>
     ${comp ? `<h3>De qué se compone el puntaje</h3>${comp}` : ''}`;
   Object.keys(S.live).forEach(pintarVivo);
@@ -667,7 +667,7 @@ function vEstac() {
   const d = S.d, mAct = new Date().getMonth();
   const rows = d.estacionalidad.filas.filter(f => S.filtro === 'Todas' || f.clase === S.filtro);
   $('#vista').innerHTML = hero('Calendario', `¿Qué meses suelen ser <span class="grad">mejores</span>?`, 'Retorno mensual promedio de los últimos años.') + `<div class="card">
-    <p class="muted" style="margin-top:0">Pasa el cursor por una celda para ver en cuántos años subió ese mes. Con 10-12 años de historia, un mes “bueno” es una tendencia débil: úsalo para ajustar tamaño o paciencia, no para entrar a ciegas. El mes actual está marcado.</p>
+    <p class="tip">${TIP}Pasa el cursor por una celda: años en que subió ese mes. Con 10–12 años de datos es una tendencia débil. El mes actual está marcado.</p>
     ${chipsH(['Todas', ...d.clases], S.filtro, 'c')}
     <div class="scroll"><table class="hm"><thead><tr><th>Activo</th>${MESES.map((m, i) => `<th class="${i === mAct ? 'neg' : ''}">${m}${i === mAct ? '•' : ''}</th>`).join('')}</tr></thead><tbody>
     ${rows.map(f => `<tr><td><a href="#sim/${f.id}">${esc(f.nombre)}</a></td>${f.prom.map((v, i) => `<td class="c" style="background:${divColor(v, 8)}" title="${v == null ? '' : `Subió ${nf(f.pos[i], 0)}% de los años (n=${f.n[i]})`}">${v == null ? '' : nf(v, 1)}</td>`).join('')}</tr>`).join('')}
@@ -679,7 +679,7 @@ function vEstac() {
 function vCorr() {
   const C = S.d.correlaciones;
   $('#vista').innerHTML = hero('Diversificación', `¿Qué activos se mueven <span class="grad">juntos</span>?`, 'Correlaciones de los últimos 2 años con retornos semanales.') + `<div class="card">
-    <p class="muted" style="margin-top:0">1 = se mueven igual, 0 = sin relación, −1 = opuestos. Para diversificar de verdad busca valores bajos o negativos: si todo tiene 0,8 con todo, tener muchos activos no te protege cuando cae el mercado.</p>
+    <p class="tip">${TIP}<b>1</b> se mueven igual · <b>0</b> sin relación · <b>−1</b> opuestos. Para diversificar, busca valores bajos o negativos.</p>
     <div class="scroll"><table class="hm"><thead><tr><th></th>${C.nombres.map(n => `<th class="v">${esc(n)}</th>`).join('')}</tr></thead><tbody>
     ${C.matriz.map((row, i) => `<tr><td>${esc(C.nombres[i])}</td>${row.map(v => `<td class="c" style="background:${divColor(v, 1)}">${v == null ? '' : nf(v, 1)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
 }
@@ -690,8 +690,8 @@ function vPort() {
   if (!nombres.length) { $('#vista').innerHTML = '<div class="card">Sin datos suficientes para armar portafolios.</div>'; return; }
   if (!P[S.perfil]) S.perfil = nombres[0];
   const p = P[S.perfil], m = p.mensual, an = p.anual;
-  $('#vista').innerHTML = hero('Portafolio', `Un reparto de ejemplo <span class="grad">para todo el mundo</span>`, 'Por perfil de riesgo, distribuido entre bonos, acciones globales, Chile, salmoneras, materias primas y cripto.') + `<div class="card">
-    <p class="muted" style="margin-top:0">Dentro de cada clase se eligen los activos de mayor puntaje y se pondera por menor volatilidad. Es un punto de partida para pensar, no una recomendación personalizada.</p>
+  $('#vista').innerHTML = hero('Portafolio', `Un reparto de ejemplo <span class="grad">para todo el mundo</span>`, 'Por perfil de riesgo: bonos, acciones, Chile, materias primas y cripto.') + `<div class="card">
+    <p class="tip">${TIP}Mayor puntaje por clase, ponderado por menor volatilidad. Punto de partida, no recomendación.</p>
     <div class="btns">${nombres.map(n => `<span class="btn ${n === S.perfil ? 'on' : ''}" data-p="${n}">${n}</span>`).join('')}</div>
     <div class="kpis">
       <div class="kpi"><small>Prob. de ganar en 1 mes</small><b>${pc0(m.p_sube)}</b></div>
@@ -724,7 +724,7 @@ function vCalib() {
   const rows = c.buckets.filter(b => b.n > 0);
   const f = x => x == null ? '—' : pc0(x);
   $('#vista').innerHTML = hero('Honestidad', `¿Qué tan buenas han sido las <span class="grad">probabilidades</span>?`, 'La prueba más importante antes de pensar en automatizar.') + `<div class="card">
-    <p class="muted" style="margin-top:0">Se toma el método de “situaciones parecidas” (tendencia y volatilidad), se calcula qué probabilidad de subida habría dado <b>usando solo datos anteriores a cada día</b>, y se compara con lo que pasó de verdad, en todos los activos.</p>
+    <p class="tip">${TIP}Método de “situaciones parecidas”, medido <b>solo con datos previos a cada día</b> y comparado con lo que pasó en todos los activos.</p>
     <div class="btns"><span class="btn ${S.calH === '7' ? 'on' : ''}" data-h="7">1 semana</span><span class="btn ${S.calH === '30' ? 'on' : ''}" data-h="30">1 mes</span></div>
     <div class="kpis"><div class="kpi"><small>Frecuencia general de subidas</small><b>${f(c.base)}</b></div>
       <div class="kpi"><small>Cuando daba ≥60%, subió</small><b>${f(c.desde_60.real)}</b><small>≈${nf(c.desde_60.n_ef, 0)} episodios independientes</small></div>
@@ -732,8 +732,8 @@ function vCalib() {
     <div class="cv s"><canvas id="cal"></canvas></div>
     <div class="scroll"><table><thead><tr><th class="l">Probabilidad que dio el método</th><th>Casos</th><th>Dio en promedio</th><th>Subió en la realidad</th></tr></thead><tbody>
     ${rows.map(b => `<tr><td class="l">${pc0(b.desde)}–${pc0(b.hasta)}</td><td>${b.n.toLocaleString('es-CL')}</td><td>${f(b.pred)}</td><td><b>${f(b.real)}</b></td></tr>`).join('')}</tbody></table></div>
-    <div class="note info">Si el método fuera muy bueno, “Subió en la realidad” crecería junto con “Dio en promedio”. Si es casi plana, la probabilidad de dirección no aporta ventaja y operar solo con eso (o automatizarlo) no tiene respaldo. Los casos se traslapan en el tiempo, por eso los episodios independientes son muchos menos.</div>
-    <div class="note">Para automatizar con Binance más adelante: prueba primero en modo simulado (testnet) durante semanas, usa una API con permiso de operar pero <b>sin permiso de retiro</b>, arriesga montos pequeños y define una pérdida máxima diaria que apague el sistema.</div></div>`;
+    <div class="note info">Si “Subió en la realidad” no crece junto con “Dio en promedio”, la dirección no aporta ventaja. Los casos se traslapan, por eso los episodios independientes son menos.</div>
+    <div class="note">Antes de automatizar en Binance: testnet por semanas, API <b>sin permiso de retiro</b>, montos pequeños y una pérdida máxima diaria.</div></div>`;
   $$('.btn[data-h]').forEach(b => b.onclick = () => { S.calH = b.dataset.h; kill(); vCalib(); });
   mk('cal', {type: 'bar', data: {labels: rows.map(b => pc0(b.desde) + '–' + pc0(b.hasta)), datasets: [
     {label: 'Dio el método', data: rows.map(b => b.pred), backgroundColor: COL.blue}, {label: 'Subió en la realidad', data: rows.map(b => b.real), backgroundColor: COL.acc}]},
@@ -743,12 +743,12 @@ function vCalib() {
 
 // ---------------------------------------------------------------- HISTORIAL (prueba pública hacia adelante)
 async function vHist() {
-  let h = hero('Transparencia', `Lo que dijimos y lo que <span class="grad">pasó de verdad</span>`, 'Cada día se guardan las probabilidades del modelo ANTES de conocer el resultado. Cuando pasa el plazo, se comparan con lo que ocurrió. Aquí ves el marcador real, sea bueno o malo.');
+  let h = hero('Transparencia', `Lo que dijimos y lo que <span class="grad">pasó de verdad</span>`, 'Se guarda cada probabilidad ANTES del resultado y luego se compara con lo que pasó. Marcador real, bueno o malo.');
   $('#vista').innerHTML = h + '<p class="muted pad">Cargando historial…</p>';
   let H;
   try { H = (await getJSON('historial.json', [S.base])).j; } catch (e) { H = null; }
   if (S.vista !== 'hist') return;
-  if (!H) { $('#vista').innerHTML = h + '<div class="card"><h2>Aún no hay historial</h2><p class="muted">Se empieza a llenar con el próximo informe real. La primera medición (1 día) aparece al día siguiente; la de 1 mes, a los 30 días.</p></div>'; return; }
+  if (!H) { $('#vista').innerHTML = h + '<div class="card"><h2>Aún no hay historial</h2><p class="muted">Se llena con el próximo informe real: 1 día a las 24 h, 1 mes a los 30 días.</p></div>'; return; }
   const hs = ['1', '7', '30'];
   const tot = hs.reduce((s, k) => s + H.res[k].n, 0);
   const sk = k => { const r = H.res[k]; if (!r.n) return null; const b = r.y / r.n, ref = b * (1 - b); return ref > 0 ? 1 - (r.brier / r.n) / ref : null; };
@@ -761,12 +761,12 @@ async function vHist() {
   hs.forEach(k => Object.entries(H.res[k].clases).forEach(([c, v]) => { cl[c] = cl[c] || [0, 0]; cl[c][0] += v[0]; cl[c][1] += v[1]; }));
   const filasC = Object.entries(cl).filter(([, v]) => v[0] >= 20).sort((x, y) => y[1] / y[0] - x[1] / x[0]);
   h += `<div class="grid2"><div class="card"><h2>¿Las probabilidades son honestas? <span class="sub">1 mes</span></h2><div class="cv s"><canvas id="hc"></canvas></div>
-    <p class="muted" style="font-size:12.5px;margin:8px 0 0">Si el modelo dice “60%”, lo ideal es que suba ~60% de las veces. Cuanto más cerca de la diagonal, mejor calibrado.</p></div>
+    <p class="tip">${TIP}Si dice “60%”, lo ideal es que suba ~60% de las veces. Cerca de la diagonal = bien calibrado.</p></div>
     <div class="card"><h2>Acierto por tipo de activo <span class="sub">todos los plazos</span></h2>${filasC.length ? filasC.map(([c, v]) => `<div class="bar"><span>${esc(c)}</span><i style="width:${Math.round(v[1] / v[0] * 160)}px"></i><span style="width:auto">${pc0(v[1] / v[0])} <span class="muted">(${v[0]})</span></span></div>`).join('') : '<p class="muted">Aún hay pocos datos por clase.</p>'}</div></div>`;
   const ult = [...H.ultimos].reverse().slice(0, 40);
   h += `<div class="card"><h2>Últimos resultados</h2>${ult.length ? `<div class="scroll" style="max-height:420px;overflow:auto"><table><thead><tr><th class="l">Activo</th><th>Plazo</th><th>Fecha</th><th>Dijimos “sube”</th><th>Pasó</th><th>Retorno</th><th></th></tr></thead><tbody>
     ${ult.map(u => { const ok = (u[5] >= 0.5) === (u[6] === 1); return `<tr><td class="l">${esc(u[1])}</td><td>${HZS[u[4]]}</td><td>${esc(u[2])}</td><td>${pc0(u[5])}</td><td class="${u[6] ? 'pos' : 'neg'}">${u[6] ? 'Subió' : 'Bajó'}</td><td class="${cls(u[7])}">${pct(u[7])}</td><td class="${ok ? 'pos' : 'neg'}">${ok ? '✔' : '✘'}</td></tr>`; }).join('')}</tbody></table></div>` : '<p class="muted">Todavía no hay resultados.</p>'}</div>
-    <div class="note">Los resultados son parte del producto: se publican aunque sean malos. Una herramienta que muestra cuánto falla es más útil que una que solo muestra aciertos.</div>`;
+    <div class="note">Los resultados se publican aunque sean malos: mostrar cuánto falla da más confianza.</div>`;
   $('#vista').innerHTML = h;
   const bins = H.res['30'].bins.map((b, i) => b[0] >= 5 ? {x: b[1] / b[0], y: b[2] / b[0], n: b[0]} : null).filter(Boolean);
   if (bins.length) mk('hc', {type: 'scatter', data: {datasets: [{label: 'Real', data: bins, backgroundColor: COL.acc, pointRadius: 6}, {type: 'line', label: 'Perfecto', data: [{x: 0, y: 0}, {x: 1, y: 1}], borderColor: COL.mut, borderDash: [5, 4], pointRadius: 0}]},
@@ -777,9 +777,9 @@ async function vHist() {
 function vLista() {
   const d = S.d, l = S.fav.map(act).filter(Boolean);
   const opt = d.clases.map(c => `<optgroup label="${esc(c)}">${d.activos.filter(x => x.clase === c && !isFav(x.id)).map(x => `<option value="${x.id}">${esc(x.nombre)}</option>`).join('')}</optgroup>`).join('');
-  let h = hero('Mi lista', `Tus activos, <span class="grad">de un vistazo</span>`, 'Se guarda en este navegador (no hay cuenta todavía). Con la estrella ☆ puedes agregar activos desde cualquier tabla.');
+  let h = hero('Mi lista', `Tus activos, <span class="grad">de un vistazo</span>`, 'Se guarda en este navegador. Agrega activos con la estrella ☆.');
   h += `<div class="card"><div class="sel"><select id="add"><option value="">Agregar activo…</option>${opt}</select><button class="btn" id="exp">Exportar</button><button class="btn" id="imp">Importar</button></div><div id="io"></div></div>`;
-  if (!l.length) h += '<div class="card"><p class="muted">Tu lista está vacía. Agrega activos con el selector de arriba o con la estrella ☆ en “Mañana” y “Mercados”.</p></div>';
+  if (!l.length) h += '<div class="card"><p class="muted">Tu lista está vacía. Agrega activos con ☆ en Mañana y Mercados.</p></div>';
   else {
     h += `<div class="card"><div class="scroll"><table class="tb"><thead><tr><th class="l">Activo</th><th>Precio</th><th>30 días</th><th>1 día</th><th style="min-width:150px">Sube ▲ / Baja ▼ mañana</th><th>Sube ▲ / Baja ▼ 1 mes</th><th>Riesgo</th></tr></thead><tbody>
       ${l.map(a => `<tr data-id="${a.id}" style="cursor:pointer"><td class="l">${star(a.id)}<span class="nm">${esc(a.nombre)}</span><span class="tag">${esc(a.ticker)}</span></td><td data-live="${a.id}">${price(a.precio)}</td><td>${spark(a.spark, 80, 24)}</td><td class="${cls(a.d1)}">${pct(a.d1)}</td><td>${pbar(a.mc['1'].p_sube)}</td><td style="min-width:150px">${pbar(a.mc['30'].p_sube)}</td><td><span class="badge r-${a.riesgo}">${a.riesgo}</span></td></tr>`).join('')}</tbody></table></div></div>`;
@@ -798,14 +798,14 @@ function vLista() {
 
 // ---------------------------------------------------------------- CUENTA
 function vCuenta() {
-  $('#vista').innerHTML = hero('Cuenta', `Próximamente: <span class="grad">tu cuenta</span>`, 'Hoy la página es abierta y no pide registro. Esta sección muestra hacia dónde va el producto.') + `
+  $('#vista').innerHTML = hero('Cuenta', `Próximamente: <span class="grad">tu cuenta</span>`, 'La página es abierta y sin registro. Aquí, lo que viene.') + `
     <div class="grid2"><div class="card glow"><h2>Ingresar (aún no disponible)</h2>
       <div class="lock"><div class="sel"><input type="email" placeholder="correo@ejemplo.com" disabled></div><div class="sel"><input type="password" placeholder="contraseña" disabled></div><div class="btns"><button class="btn pri" disabled>Entrar</button><button class="btn" disabled>Crear cuenta</button></div></div>
       <p class="muted" style="font-size:13px">Por ahora tu lista (“Mi lista”) se guarda solo en este navegador.</p></div>
     <div class="card"><h2>Qué traerá una cuenta</h2><ul>
-      <li>Mi lista sincronizada entre computador, tablet y celular.</li><li>Alertas por correo o Telegram: “avísame si BTC cae más de 5%” o “si sale una noticia de Nvidia”.</li>
-      <li>Portafolio propio (tus posiciones de XTB y Binance cargadas a mano o por archivo) con riesgo y probabilidades calculados sobre lo que realmente tienes.</li><li>Historial de lo que decía el modelo cada día y cómo resultó.</li><li>Plan gratuito con lo esencial y plan Pro con alertas ilimitadas y más activos.</li></ul></div></div>
-    <div class="note info">Esta página no vende señales de compra/venta ni promete rentabilidad. Su valor es mostrar riesgo y probabilidades de forma clara y honesta, incluyendo cuánto fallan.</div>`;
+      <li>Mi lista sincronizada entre computador, tablet y celular.</li><li>Alertas por correo o Telegram, por ejemplo “avísame si BTC cae más de 5%”.</li>
+      <li>Portafolio propio (XTB y Binance) con riesgo y probabilidades sobre lo que tienes.</li><li>Historial de lo que decía el modelo cada día y cómo resultó.</li><li>Plan gratuito con lo esencial y plan Pro con alertas ilimitadas y más activos.</li></ul></div></div>
+    <div class="note info">No vende señales ni promete rentabilidad: muestra riesgo y probabilidades, incluyendo cuánto fallan.</div>`;
 }
 
 
@@ -829,7 +829,7 @@ function vAjustes() {
         <li><b>Android (Chrome):</b> botón “Instalar app” o menú ⋮ → Instalar aplicación.</li>
         <li><b>iPhone / iPad (Safari):</b> Compartir → Agregar a pantalla de inicio. Los avisos solo funcionan con la app instalada (iOS 16.4+).</li>
         <li><b>Computador (Chrome o Edge):</b> ícono de instalar en la barra de direcciones.</li></ul>
-      <p class="muted" style="font-size:13px">Los avisos llegan con la app abierta o en segundo plano. Con la app cerrada depende del navegador (a veces en Android; no en iPhone ni computador).</p></details></div>
+      <p class="muted" style="font-size:13px">Con la app cerrada, solo algunos Android avisan; iPhone y computador no.</p></details></div>
     <div class="card"><h2>Tus datos en este dispositivo</h2>
       ${fila('Mi lista', `${S.fav.length} activo(s) guardado(s).`, '<button class="btn" id="blis">Vaciar</button>')}
       ${fila('Restablecer ajustes', 'Tema, avisos y preferencias vuelven a lo original.', '<button class="btn" id="bres">Restablecer</button>')}
@@ -875,16 +875,20 @@ function vTerm() {
 }
 
 // ---------------------------------------------------------------- MÉTODO
+const TIP = '<svg class="tipi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8h.01"/></svg>';
 function vMetodo() {
-  $('#vista').innerHTML = hero('Método', `Cómo funciona <span class="grad">(y qué no hace)</span>`, '') + `<div class="card">
-  <h3>Actualización continua sin gastar IA</h3><p>Todo se calcula con programas normales (Python en GitHub Actions) y la página solo lee archivos ya listos: no hay IA corriendo cuando la usas. El informe completo (precios, simulaciones, probabilidades) se recalcula antes de la apertura de Tokio, Europa, Santiago y Nueva York y tras el cierre de Wall Street; los fines de semana hay un informe cripto. Las noticias y el radar cripto se actualizan cada 30 minutos, y esta página revisa si hay algo nuevo cada 3 minutos. Los precios cripto se mueven en vivo desde Binance mientras tienes la página abierta.</p>
-  <h3>Datos</h3><p>Precios diarios de Yahoo Finance (≈12 años); noticias de RSS públicos (solo titular y enlace a la fuente); radar cripto de CoinGecko y DEX Screener; sentimiento Fear &amp; Greed de alternative.me. Si una fuente falla, esa parte queda con su último dato y el resto sigue.</p>
-  <h3>Escenarios simulados (Monte Carlo)</h3><p>Para cada activo se simulan ${S.d.n_sims.toLocaleString('es-CL')} futuros posibles. Se toman los retornos diarios pasados, se normalizan por la volatilidad de ese momento y se sortean con reposición; luego se reescalan con una volatilidad simulada que sube después de sustos y baja en calma (tipo GARCH). Así las caídas bruscas, más frecuentes que en una campana normal, quedan representadas. La <b>deriva</b> (tendencia esperada) es solo el 25% de la histórica y está limitada, para no tratar un mercado alcista pasado como una promesa. De los escenarios salen: probabilidad de subir y de bajar, rango del 90% de los casos, pérdida 95% (VaR), pérdida promedio del peor 5% (CVaR) y probabilidad de tocar −10%.</p>
-  <h3>Situaciones parecidas</h3><p>Se buscan en la historia del mismo activo los días con igual tendencia (precio vs. medias de 50 y 200 días) y volatilidad relativa, y se mide cuántas veces subió después, con rango de confianza y comparado con la frecuencia general.</p>
-  <h3>Puntaje (0-100)</h3><p>30% tendencia, 25% momentum, 20% retorno por unidad de riesgo del último año, 15% probabilidad simulada de subir en un mes, 10% cercanía al máximo; se reduce hasta un 50% si el RSI supera 70. Mide lo que viene pasando, no lo que va a pasar.</p>
-  <h3>Riesgo</h3><p>Según la volatilidad anual de los últimos 60 días: Bajo (&lt;12%), Medio (12–25%), Alto (25–45%), Muy alto (&gt;45%). Las cripto nuevas y memecoins pueden perder la mitad de su valor.</p>
-  <h3>Límites</h3><ul><li>El <a href="#hist" style="color:var(--warn)">Historial</a> guarda lo que decía el modelo cada día y lo compara con lo que pasó, para que lo verifiques tú mismo.</li><li>La calibración histórica muestra que la dirección de un día o una semana es casi un cara o sello; lo confiable es el tamaño del riesgo.</li><li>No considera calendario económico, resultados de empresas ni feriados. Las noticias se muestran como contexto, no entran al cálculo.</li><li>No incluye flujos de ballenas on-chain ni de ETFs (requieren fuentes de pago).</li><li>Un ticker sin datos aparece listado en “Mercados” y se omite sin afectar el resto. Los datos pueden tener minutos u horas de retraso.</li></ul>
-  <div class="note">Herramienta para leer el mercado y apoyar tus decisiones. No es asesoría financiera.</div></div>`;
+  const c = (t, x) => `<div class="card sm"><h3>${t}</h3><p class="mt">${x}</p></div>`;
+  $('#vista').innerHTML = hero('Método', `Cómo funciona <span class="grad">(y qué no hace)</span>`, 'Resumen corto de cada parte.') + `<div class="grid3">
+  ${c('Sin IA al usarla', 'Todo se calcula con Python en GitHub Actions; la página solo lee archivos listos.')}
+  ${c('Cuándo se actualiza', 'Informe completo antes de cada apertura (Tokio, Europa, Santiago, Nueva York) y tras el cierre de Wall Street. Precios y noticias cada 10 min. Cripto en vivo desde Binance.')}
+  ${c('Datos', 'Precios de Yahoo Finance (≈12 años), noticias de RSS públicos, cripto de CoinGecko y DEX Screener, miedo y codicia de alternative.me. Si una fuente falla, queda su último dato.')}
+  ${c('Escenarios simulados', `${S.d.n_sims.toLocaleString('es-CL')} futuros por activo (Monte Carlo) con volatilidad que sube tras sustos y baja en calma. Tendencia esperada: solo 25% de la histórica. Salen: prob. de subir y bajar, rango del 90%, pérdida 95% (VaR), pérdida del peor 5% (CVaR).`)}
+  ${c('Situaciones parecidas', 'Días pasados del mismo activo con igual tendencia (medias de 50 y 200 días) y volatilidad. Se mide cuántas veces subió después, con rango de confianza.')}
+  ${c('Puntaje (0–100)', '30% tendencia, 25% momentum, 20% retorno/riesgo, 15% prob. de subir en un mes, 10% cercanía al máximo; hasta −50% si RSI &gt; 70. Mide lo que viene pasando, no lo que pasará.')}
+  ${c('Riesgo', 'Por volatilidad anual (60 días): Bajo &lt;12% · Medio 12–25% · Alto 25–45% · Muy alto &gt;45%. Memecoins pueden perder la mitad de su valor.')}
+  ${c('Qué tan confiable', 'La dirección a 1 día o 1 semana es casi cara o sello; lo confiable es el tamaño del riesgo. Verifícalo en el <a href="#hist" style="text-decoration:underline">Historial</a>.')}
+  ${c('Límites', 'No considera calendario económico, resultados de empresas ni flujos on-chain o de ETFs. Las noticias son contexto, no entran al cálculo. Los datos pueden tener retraso.')}</div>
+  <div class="note">Herramienta para leer el mercado y apoyar tus decisiones. No es asesoría financiera.</div>`;
 }
 
 // ---------------------------------------------------------------- app instalable + avisos
