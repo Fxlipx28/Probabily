@@ -96,11 +96,12 @@ $('#nav').innerHTML = NAV.map(([g, items]) => `<div class="ng">${g}</div>` + ite
   `<a class="nv" href="#${k}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${IC[k]}"/></svg>${t}${b ? `<span class="new">${b}</span>` : ''}</a>`).join('')).join('');
 
 // ---------------------------------------------------------------- componentes visuales
-function spark(arr, w = 90, h = 28) {
+function spark(arr, w = 90, h = 28, dir) {
   if (!arr || arr.length < 2) return '';
   const mn = Math.min(...arr), mx = Math.max(...arr), rg = (mx - mn) || 1;
   const pts = arr.map((v, i) => `${(i / (arr.length - 1) * w).toFixed(1)},${(h - 2 - (v - mn) / rg * (h - 4)).toFixed(1)}`).join(' ');
-  const c = arr[arr.length - 1] >= arr[0] ? COL.up : COL.dn;
+  const sube = dir == null ? arr[arr.length - 1] >= arr[0] : dir >= 0;
+  const c = sube ? COL.up : COL.dn;
   return `<svg class="spk" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 }
 function pbar(p) {
@@ -278,7 +279,7 @@ function vHoy() {
   const top = (h, dir) => [...rk_].sort((a, b) => dir * (b.mc[h].p_sube - a.mc[h].p_sube)).slice(0, 4);
   const tg = d.tono;
   let h = `<div class="hero sm"><span class="kick">Panel del mercado</span><h1>Hoy y <span class="grad">mañana</span></h1>${mananaHTML()}</div>`;
-  h += `<div class="kpis sm">${kp.map(a => `<a class="kpi" href="#sim/${a.id}"><small>${esc(a.nombre)}</small><b data-live="${a.id}">${price(a.precio)}</b><span class="c ${cls(a.d1)}">${pct(a.d1, 2)}</span>${spark(a.spark, 56, 22)}</a>`).join('')}</div>`;
+  h += `<div class="kpis sm">${kp.map(a => `<a class="kpi" href="#sim/${a.id}"><small>${esc(a.nombre)}</small><b data-live="${a.id}">${price(a.precio)}</b><span class="c ${cls(a.d1)}">${pct(a.d1, 2)}</span>${spark(a.spark, 56, 22, a.d1)}</a>`).join('')}</div>`;
   const rkc = (t, l, tipo) => `<div class="card sm"><h2>${t}</h2><div class="fill">${l.map(a => rk(a, tipo)).join('')}</div></div>`;
   const top5 = (dir) => [...rk_].sort((x, y) => dir * (y.mc['1'].p_sube - x.mc['1'].p_sube)).slice(0, 5);
   h += `<div class="grid3 eq">
@@ -525,7 +526,7 @@ const COLS = [
   {k: 'nombre', t: 'Activo', l: 1, f: a => `${star(a.id)}<span class="nm">${esc(a.nombre)}</span><span class="tag">${esc(a.ticker)}</span>`, v: a => a.nombre},
   {k: 'clase', t: 'Clase', l: 1, f: a => esc(a.clase), v: a => a.clase},
   {k: 'precio', t: 'Precio', f: a => `<span data-live="${a.id}">${price(a.precio)}</span>`, v: a => a.precio},
-  {k: 'spark', t: '30 días', f: a => spark(a.spark, 80, 24), v: a => a.m1},
+  {k: 'spark', t: '30 días', f: a => spark(a.spark, 80, 24, a.d1), v: a => a.m1},
   {k: 'd1', t: '1 día', f: a => `<span class="${cls(a.d1)}">${pct(a.d1)}</span>`, v: a => a.d1},
   {k: 'w1', t: '1 sem', f: a => `<span class="${cls(a.w1)}">${pct(a.w1)}</span>`, v: a => a.w1},
   {k: 'm1', t: '1 mes', f: a => `<span class="${cls(a.m1)}">${pct(a.m1)}</span>`, v: a => a.m1},
@@ -782,7 +783,7 @@ function vLista() {
   if (!l.length) h += '<div class="card"><p class="muted">Tu lista está vacía. Agrega activos con ☆ en Mañana y Mercados.</p></div>';
   else {
     h += `<div class="card"><div class="scroll"><table class="tb"><thead><tr><th class="l">Activo</th><th>Precio</th><th>30 días</th><th>1 día</th><th style="min-width:150px">Sube ▲ / Baja ▼ mañana</th><th>Sube ▲ / Baja ▼ 1 mes</th><th>Riesgo</th></tr></thead><tbody>
-      ${l.map(a => `<tr data-id="${a.id}" style="cursor:pointer"><td class="l">${star(a.id)}<span class="nm">${esc(a.nombre)}</span><span class="tag">${esc(a.ticker)}</span></td><td data-live="${a.id}">${price(a.precio)}</td><td>${spark(a.spark, 80, 24)}</td><td class="${cls(a.d1)}">${pct(a.d1)}</td><td>${pbar(a.mc['1'].p_sube)}</td><td style="min-width:150px">${pbar(a.mc['30'].p_sube)}</td><td><span class="badge r-${a.riesgo}">${a.riesgo}</span></td></tr>`).join('')}</tbody></table></div></div>`;
+      ${l.map(a => `<tr data-id="${a.id}" style="cursor:pointer"><td class="l">${star(a.id)}<span class="nm">${esc(a.nombre)}</span><span class="tag">${esc(a.ticker)}</span></td><td data-live="${a.id}">${price(a.precio)}</td><td>${spark(a.spark, 80, 24, a.d1)}</td><td class="${cls(a.d1)}">${pct(a.d1)}</td><td>${pbar(a.mc['1'].p_sube)}</td><td style="min-width:150px">${pbar(a.mc['30'].p_sube)}</td><td><span class="badge r-${a.riesgo}">${a.riesgo}</span></td></tr>`).join('')}</tbody></table></div></div>`;
     const nn = S.r ? S.r.noticias.filter(n => (n.activos || []).some(id => isFav(id))).slice(0, 9) : [];
     if (nn.length) h += `<div class="card"><h2>Noticias de tu lista</h2><div class="ngrid">${nn.map(newsCard).join('')}</div></div>`;
   }
