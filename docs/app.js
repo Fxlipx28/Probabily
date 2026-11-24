@@ -254,12 +254,30 @@ function mapaHTML() {
     <p class="muted" style="margin:0 0 8px;font-size:12.5px">${l.length} activos · <span class="pos">${sube} suben</span> · <span class="neg">${l.length - sube} bajan</span> · promedio <b class="${cls(prom)}">${pct(prom, 2)}</b></p>
     <div class="heat">${l.map(a => `<a class="tile" href="#sim/${a.id}" style="background:${divColor(a.d1, 0.04)}"><b>${esc(a.nombre)}</b>${pct(a.d1)}</a>`).join('') || '<span class="muted">Sin datos.</span>'}</div>`;
 }
+// Feriados bursátiles de EE.UU. (NYSE). Fuera de 2026-2027 solo se consideran fines de semana.
+const FER_US = new Set(['2026-01-01', '2026-01-19', '2026-02-16', '2026-04-03', '2026-05-25', '2026-06-19', '2026-07-03', '2026-09-07', '2026-11-26', '2026-12-25',
+  '2027-01-01', '2027-01-18', '2027-02-15', '2027-03-26', '2027-05-31', '2027-06-18', '2027-07-05', '2027-09-06', '2027-11-25', '2027-12-24']);
+function mananaInfo() {
+  const p = new Intl.DateTimeFormat('en-CA', {timeZone: 'America/Santiago'}).format(new Date()).split('-').map(Number);
+  const hoy = new Date(Date.UTC(p[0], p[1] - 1, p[2])), iso = x => x.toISOString().slice(0, 10);
+  const abierto = x => x.getUTCDay() % 6 !== 0 && !FER_US.has(iso(x));
+  const f = x => new Intl.DateTimeFormat('es-CL', {weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC'}).format(x);
+  const man = new Date(hoy.getTime() + 864e5);
+  let prox = man; for (let i = 0; i < 10 && !abierto(prox); i++) prox = new Date(prox.getTime() + 864e5);
+  const fin = man.getUTCDay() % 6 === 0;
+  return {texto: f(man), abierto: abierto(man), prox: f(prox), motivo: fin ? 'fin de semana' : 'feriado en EE.UU.'};
+}
+function mananaHTML() {
+  const m = mananaInfo();
+  return `<p class="mh"><b>Mañana ${esc(m.texto)}</b><span class="mst ${m.abierto ? 'open' : 'closed'}">${m.abierto ? 'Mercado abierto' : 'Mercado cerrado'}</span></p>
+    <p class="mh2">${m.abierto ? 'Probabilidades de acciones, índices y materias primas para la próxima sesión. Cripto: próximas 24 horas.' : `Próxima sesión: ${esc(m.prox)} (${m.motivo}). Las probabilidades de acciones corresponden a esa sesión. Cripto opera igual, las 24 horas.`}</p>`;
+}
 function vHoy() {
   const d = S.d, rk_ = d.activos.filter(a => a.rankeable);
   const kp = ['^GSPC', '^IXIC', 'BTC-USD', 'GC=F', 'USDCLP=X', '^VIX'].map(t => d.activos.find(a => a.ticker === t)).filter(Boolean);
   const top = (h, dir) => [...rk_].sort((a, b) => dir * (b.mc[h].p_sube - a.mc[h].p_sube)).slice(0, 4);
   const tg = d.tono;
-  let h = `<div class="hero sm"><span class="kick">Panel del mercado</span><h1>Hoy y <span class="grad">mañana</span></h1><p>${esc(d.manana.texto)}</p></div>`;
+  let h = `<div class="hero sm"><span class="kick">Panel del mercado</span><h1>Hoy y <span class="grad">mañana</span></h1>${mananaHTML()}</div>`;
   h += `<div class="kpis sm">${kp.map(a => `<a class="kpi" href="#sim/${a.id}"><small>${esc(a.nombre)}</small><b data-live="${a.id}">${price(a.precio)}</b><span class="c ${cls(a.d1)}">${pct(a.d1, 2)}</span>${spark(a.spark, 56, 22)}</a>`).join('')}</div>`;
   const rkc = (t, l, tipo) => `<div class="card sm"><h2>${t}</h2><div class="fill">${l.map(a => rk(a, tipo)).join('')}</div></div>`;
   const top5 = (dir) => [...rk_].sort((x, y) => dir * (y.mc['1'].p_sube - x.mc['1'].p_sube)).slice(0, 5);
@@ -278,7 +296,7 @@ function vHoy() {
     ${rkc('Menor riesgo', d.rankings.menor_riesgo.slice(0, 4).map(act).filter(Boolean), 'vol')}
     ${rkc('Mayor riesgo', d.rankings.mayor_riesgo.slice(0, 4).map(act).filter(Boolean), 'vol')}</div>`;
   h += `<div class="card sm"><h2>Mapa del día <span class="sub">variación en el último día</span></h2><div id="mapa">${mapaHTML()}</div></div>`;
-  h += `<details class="card sm" id="inf"><summary>Informe completo <span class="sub">${esc(d.informe.titulo)}</span></summary><div id="infb">${informeHTML()}</div></details>`;
+  h += `<details class="card sm" id="inf"><summary>Informe completo</summary><div id="infb">${informeHTML()}</div></details>`;
   $('#vista').innerHTML = h;
   const ligar = () => $$('.chip[data-mapa]').forEach(c => c.onclick = () => { S.mapa = c.dataset.mapa; $('#mapa').innerHTML = mapaHTML(); ligar(); });
   ligar();
@@ -382,7 +400,15 @@ function resumenHTML(res) {
   }).join('')}</div>`;
 }
 const INF_CORTO = ['Qué mirar', 'Más atractivo', 'Buen puntaje, bajo riesgo', 'Riesgo', 'Cripto', 'Confiabilidad', 'Límites'];
-const INF_ICO = ['👁', '⭐', '⚖️', '⚠️', '₿', '🎯', 'ℹ️'];
+const INF_SVG = [
+  'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
+  'M12 3v18M5 7h14M5 7l-3 7a4 4 0 0 0 6 0L5 7zM19 7l-3 7a4 4 0 0 0 6 0l-3-7z',
+  'M12 3l10 18H2L12 3zM12 10v5M12 18v.5',
+  'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 8h4a2 2 0 0 1 0 4h-4m0 0h4.5a2 2 0 0 1 0 4H9.5M9.5 8v8M11 6v2M11 16v2',
+  'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 12h.01',
+  'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8h.01'];
+const infIco = n => `<svg class="ii-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${INF_SVG[n] || INF_SVG[6]}"/></svg>`;
 function infItem(x) {
   x = String(x);
   const m = x.match(/^((?:[^:.(]|\([^)]*\)){2,60}):\s+(.*)$/s);
@@ -395,8 +421,8 @@ function infItem(x) {
 }
 function informeHTML() {
   const sec = S.d.informe.secciones, k = Math.min(S.inf || 0, sec.length - 1), s = sec[k];
-  return `<div class="infnav">${sec.map((q, n) => `<button class="chip ${n === k ? 'on' : ''}" data-inf="${n}">${INF_ICO[n] || '•'} ${INF_CORTO[n] || esc(q.titulo.slice(0, 24))}</button>`).join('')}</div>
-    <div class="infsec"><h3>${INF_ICO[k] || ''} ${esc(s.titulo)}</h3><ul class="inflist">${s.items.map(infItem).join('')}</ul></div>
+  return `<div class="infnav">${sec.map((q, n) => `<button class="chip ${n === k ? 'on' : ''}" data-inf="${n}">${infIco(n)}${INF_CORTO[n] || esc(q.titulo.slice(0, 24))}</button>`).join('')}</div>
+    <div class="infsec"><h3 class="infh">${infIco(k)}${esc(s.titulo)}</h3><ul class="inflist">${s.items.map(infItem).join('')}</ul></div>
     <div class="note">${esc(S.d.informe.aviso)}</div>`;
 }
 
@@ -484,10 +510,10 @@ function vRadar() {
     $('#vista').innerHTML = h + '<div class="card"><h2>Radar</h2><p class="muted">Aún no hay datos del radar. Se publican junto con las noticias (cada 30 minutos). Si CoinGecko o DEX Screener no respondieron, se reintenta en la siguiente ejecución.</p></div>'; return;
   }
   h += `<div class="note bad"><b>Mucho cuidado con lo nuevo.</b> Los tokens recién creados son los de mayor riesgo del mercado: muchos son estafas (“rug pulls”), no se pueden vender, o pierden 90% en horas. Aparecer aquí NO significa que sean seguros ni una recomendación. Si decides mirar uno, revisa liquidez, quién tiene los tokens y usa montos que puedas perder por completo.</div>`;
-  h += `<div class="grid2"><div class="card"><h2>🔥 Tendencia ahora</h2>${R.trending.length ? `<div class="scroll"><table><thead><tr><th class="l">Cripto</th><th>Ranking</th><th>24 h</th></tr></thead><tbody>${R.trending.map(x => `<tr><td class="l"><b>${esc(x.nombre)}</b> <span class="tag">${esc(x.simbolo)}</span></td><td>${x.rank ?? '—'}</td><td class="${cls(x.cambio24h)}">${pct(x.cambio24h)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Sin datos.</p>'}</div>
-    <div class="card"><h2>📊 Volumen anormal <span class="sub">más dinero circulando que su tamaño</span></h2>${tablaRadar(R.volumen)}</div></div>
+  h += `<div class="grid2"><div class="card"><h2>Tendencia ahora</h2>${R.trending.length ? `<div class="scroll"><table><thead><tr><th class="l">Cripto</th><th>Ranking</th><th>24 h</th></tr></thead><tbody>${R.trending.map(x => `<tr><td class="l"><b>${esc(x.nombre)}</b> <span class="tag">${esc(x.simbolo)}</span></td><td>${x.rank ?? '—'}</td><td class="${cls(x.cambio24h)}">${pct(x.cambio24h)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Sin datos.</p>'}</div>
+    <div class="card"><h2>Volumen anormal <span class="sub">más dinero circulando que su tamaño</span></h2>${tablaRadar(R.volumen)}</div></div>
     <div class="grid2"><div class="card"><h2 class="pos">▲ Mayores subidas 24 h</h2>${tablaRadar(R.ganadores)}</div><div class="card"><h2 class="neg">▼ Mayores caídas 24 h</h2>${tablaRadar(R.perdedores)}</div></div>`;
-  h += `<div class="card glow"><h2>🌱 Tokens nuevos en DEX <span class="sub">liquidez mínima US$20 mil · riesgo extremo</span></h2>${R.nuevos && R.nuevos.length ? `<div class="scroll"><table><thead><tr><th class="l">Token</th><th>Cadena</th><th>Precio USD</th><th>Liquidez</th><th>Volumen 24 h</th><th>24 h</th><th>Edad</th><th></th></tr></thead><tbody>
+  h += `<div class="card glow"><h2>Tokens nuevos en DEX <span class="sub">liquidez mínima US$20 mil · riesgo extremo</span></h2>${R.nuevos && R.nuevos.length ? `<div class="scroll"><table><thead><tr><th class="l">Token</th><th>Cadena</th><th>Precio USD</th><th>Liquidez</th><th>Volumen 24 h</th><th>24 h</th><th>Edad</th><th></th></tr></thead><tbody>
     ${R.nuevos.map(x => `<tr><td class="l"><b>${esc(x.nombre)}</b> <span class="tag">${esc(x.simbolo)}</span></td><td>${esc(x.cadena)}</td><td>${x.precio != null ? price(x.precio) : '—'}</td><td>$${nf((x.liquidez || 0) / 1e3, 0)} mil</td><td>${x.volumen24h ? '$' + nf(x.volumen24h / 1e3, 0) + ' mil' : '—'}</td><td class="${cls(x.cambio24h)}">${pct(x.cambio24h, 0)}</td><td>${x.edad_horas != null ? nf(x.edad_horas, 0) + ' h' : '—'}</td><td>${x.url ? `<a class="pill" target="_blank" rel="noopener noreferrer" href="${esc(safeUrl(x.url))}">Ver ↗</a>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No hay tokens nuevos que cumplan el filtro de liquidez en este momento.</p>'}</div>`;
   const cr = S.r.noticias.filter(n => n.categoria === 'Cripto').slice(0, 6);
   if (cr.length) h += `<div class="card"><h2>Noticias cripto</h2><div class="ngrid">${cr.map(newsCard).join('')}</div></div>`;
@@ -811,6 +837,7 @@ function vAjustes() {
     <div class="card"><h2>Información</h2>
       <ul class="tight"><li><a href="#privacidad">Política de privacidad</a></li><li><a href="#terminos">Términos de uso</a></li><li><a href="#metodo">Cómo funciona (método)</a></li><li><a href="${esc(CFG.repo || '#')}" target="_blank" rel="noopener noreferrer">Código fuente en GitHub</a></li>
       <li>Contacto: <a href="mailto:vaykief@gmail.com">vaykief@gmail.com</a></li></ul>
+      <p class="muted" style="font-size:13px">Informe: ${esc(S.d.sesion.nombre)} · ${esc(S.d.generado_chile)} (hora de Chile) · último dato de mercado ${esc(S.d.fecha_datos)} · ${S.d.n_sims.toLocaleString('es-CL')} escenarios por activo.</p>
       <p class="muted" style="font-size:13px">© 2026 Probabily · Creado por Vaykief</p></div></div>`;
   const seg = (id, fn) => $$('#' + id + ' button').forEach(b => b.onclick = () => { fn(b.dataset.v); $$('#' + id + ' button').forEach(x => x.classList.toggle('on', x === b)); });
   seg('st', v => { lsSet('lm_tema', v); aplicarTema(); vAjustes(); });
