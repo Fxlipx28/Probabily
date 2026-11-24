@@ -938,10 +938,11 @@ function pintaApp() {
 document.addEventListener('click', e => { const b = e.target.closest('[data-app]'); if (b) accionApp(b.dataset.app); });
 // menú del celular
 const menu = abrir => { document.body.classList.toggle('menu', abrir); const m = $('#mburger'); if (m) m.setAttribute('aria-expanded', abrir); };
-$('#mburger').onclick = () => menu(true);
-$('#mclose').onclick = () => menu(false);
-$('#nav').addEventListener('click', e => { if (e.target.closest('a')) menu(false); });
-$('#side').addEventListener('click', e => { if (e.target.closest('.logo')) menu(false); });
+const on = (sel, ev, fn) => { const el = $(sel); if (el) el.addEventListener(ev, fn); };
+on('#mburger', 'click', () => menu(true));
+on('#mclose', 'click', () => menu(false));
+on('#nav', 'click', e => { if (e.target.closest('a')) menu(false); });
+on('#side', 'click', e => { if (e.target.closest('.logo')) menu(false); });
 window.addEventListener('hashchange', () => menu(false));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') menu(false); });
 

@@ -1,10 +1,10 @@
 /* Probabily · service worker: modo app, funciona sin conexión con lo último que viste y muestra avisos.
    Los datos NO se guardan aquí: siempre se piden frescos a GitHub. */
-const V = 'probabily-v1';
+const V = 'probabily-v2';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'config.js', 'vendor/chart.umd.js', 'manifest.webmanifest', 'icons/icon-192.png'];
 const DATOS = 'https://raw.githubusercontent.com/Fxlipx28/Probabily/datos/latest.json';
 
-self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
+self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL.map(u => new Request(u, {cache: 'reload'})))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('probabily-') && k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
@@ -12,7 +12,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const r = e.request, u = new URL(r.url);
   if (r.method !== 'GET' || u.origin !== location.origin) return;
-  e.respondWith(fetch(r).then(res => { if (res.ok) { const cp = res.clone(); caches.open(V).then(c => c.put(r, cp)); } return res; })
+  e.respondWith(fetch(r, {cache: 'no-cache'}).then(res => { if (res.ok) { const cp = res.clone(); caches.open(V).then(c => c.put(r, cp)); } return res; })
     .catch(() => caches.match(r).then(x => x || caches.match('index.html'))));
 });
 self.addEventListener('notificationclick', e => {
