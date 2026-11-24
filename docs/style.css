@@ -265,3 +265,17 @@ details.card summary{font-weight:700;color:var(--tx)}
 .sr .sn small{font-weight:500;font-size:11px;color:var(--mut)}
 .sr .sp{display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:13px}
 .sr .sp .rbar{width:100%;margin:0}
+
+/* buscador con sugerencias */
+.busw{position:relative;flex:1;min-width:0}
+.busw input{width:100%}
+.cbl{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 12px 32px rgba(20,40,60,.18);max-height:340px;overflow:auto;padding:4px}
+.cbo{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;border-radius:8px;cursor:pointer}
+.cbo.on,.cbo:hover{background:rgba(47,128,184,.12)}
+.cbn{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbn mark{background:transparent;color:var(--cy);font-weight:800}
+.cbt{font-size:12px;color:var(--mut);white-space:nowrap}
+.cbh{padding:8px 10px;font-size:12px;color:var(--mut)}
+
+.side-act{display:flex;flex-direction:column;gap:6px;padding:10px 6px 0}
+.side-act .btn{font-size:12.5px;padding:7px 10px;width:100%;text-align:center}

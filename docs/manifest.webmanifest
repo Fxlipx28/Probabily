@@ -1,0 +1,21 @@
+{
+  "name": "Probabily · Mercados en probabilidades",
+  "short_name": "Probabily",
+  "description": "Probabilidades de subida y bajada, noticias y radar cripto del mercado mundial.",
+  "lang": "es",
+  "start_url": "./#hoy",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EEF4F8",
+  "theme_color": "#D6E8F4",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ],
+  "shortcuts": [
+    {"name": "Mañana", "url": "./#manana"},
+    {"name": "Radar cripto", "url": "./#radar"},
+    {"name": "Noticias", "url": "./#noticias"}
+  ]
+}

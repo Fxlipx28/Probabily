@@ -2,13 +2,18 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://s3.tradingview.com https://gc.zgo.at https://plausible.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com wss://stream.binance.com:9443 https://*.goatcounter.com https://plausible.io; frame-src https://*.tradingview.com https://*.tradingview-widget.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://s3.tradingview.com https://gc.zgo.at https://plausible.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com wss://stream.binance.com:9443 https://*.goatcounter.com https://plausible.io; frame-src https://*.tradingview.com https://*.tradingview-widget.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#D6E8F4">
 <title>Probabily · Mercados en probabilidades</title>
 <meta name="description" content="Entiende el riesgo antes de mover tu dinero: probabilidades de subida y bajada, noticias y radar cripto del mercado mundial.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232F80B8'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='21' font-weight='800' text-anchor='middle' fill='%23ffffff'%3EP%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Probabily">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,6 +23,7 @@
       <span><b>Probabily</b><small>Mercados en probabilidades</small></span>
     </a>
     <nav id="nav"></nav>
+    <div class="side-act" id="act"></div>
     <div class="side-foot"></div>
   </aside>
   <div class="main">

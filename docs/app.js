@@ -147,6 +147,8 @@ async function cargar() {
   ruta();
   cinta();
   conectarBinance();
+  pintaApp();
+  avisar();
   setInterval(refrescar, 3 * 60 * 1000);
 }
 async function cargarRapido() {
@@ -177,6 +179,7 @@ async function refrescar() {
   await cargarRapido();
   encabezado();
   cinta();
+  avisar();
   if (['hoy', 'manana', 'mercados', 'noticias', 'radar', 'lista'].includes(S.vista) && !document.activeElement?.matches?.('input,select,textarea')) ruta(true);
 }
 
@@ -269,7 +272,49 @@ function vHoy() {
   const ligarInf = () => $$('[data-inf]').forEach(c => c.onclick = () => { S.inf = +c.dataset.inf; $('#infb').innerHTML = informeHTML(); ligarInf(); });
   ligarInf();
 }
-function senalesHTML(act) {
+// ---------------------------------------------------------------- buscador con sugerencias
+const norm = s => String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function sugerir(q, lista, n = 12) {
+  const t = norm(q).trim();
+  if (!t) return [];
+  const out = [];
+  lista.forEach(a => {
+    const nom = norm(a.nombre), tk = norm(a.ticker), cl = norm(a.clase);
+    let s = null;
+    if (nom.startsWith(t)) s = 0; else if (tk.startsWith(t)) s = 1;
+    else if (nom.split(/[\s().\-/&]+/).some(w => w.startsWith(t))) s = 2;
+    else if (nom.includes(t) || tk.includes(t)) s = 3; else if (cl.startsWith(t)) s = 4;
+    if (s !== null) out.push([s, a]);
+  });
+  return out.sort((x, y) => x[0] - y[0] || x[1].nombre.localeCompare(y[1].nombre, 'es')).slice(0, n).map(x => x[1]);
+}
+function buscador(host, actual, pick) {
+  host.innerHTML = `<input type="search" id="cbq" autocomplete="off" spellcheck="false" placeholder="Buscar activo… (${esc(actual.nombre)})" aria-label="Buscar activo" role="combobox" aria-expanded="false"><div class="cbl" id="cbl" role="listbox" hidden></div>`;
+  const inp = $('#cbq'), box = $('#cbl'); let items = [], sel = -1;
+  const marca = (txt, q) => { const i = norm(txt).indexOf(norm(q).trim()); return i < 0 || !q.trim() ? esc(txt) : esc(txt.slice(0, i)) + '<mark>' + esc(txt.slice(i, i + q.trim().length)) + '</mark>' + esc(txt.slice(i + q.trim().length)); };
+  const pinta = () => {
+    const q = inp.value;
+    items = q.trim() ? sugerir(q, S.d.activos) : [...S.fav.map(act).filter(Boolean), ...S.d.activos.filter(x => ['GSPC', 'IXIC', 'BTC', 'ETH', 'GC'].includes(x.id))].filter((x, i, l) => l.findIndex(y => y.id === x.id) === i).slice(0, 8);
+    sel = items.length && q.trim() ? 0 : -1;
+    box.hidden = false; inp.setAttribute('aria-expanded', 'true');
+    box.innerHTML = (q.trim() ? '' : '<div class="cbh">Tu lista y populares · escribe para buscar</div>') + (items.length ? items.map((a, i) => `<div class="cbo ${i === sel ? 'on' : ''}" role="option" data-i="${i}"><span class="cbn">${marca(a.nombre, q)}</span><span class="cbt">${esc(a.ticker)} · ${esc(a.clase)}</span></div>`).join('') : `<div class="cbh">Sin resultados para “${esc(q)}”</div>`);
+  };
+  const resalta = () => { $$('.cbo', box).forEach((e, i) => { e.classList.toggle('on', i === sel); if (i === sel) e.scrollIntoView({block: 'nearest'}); }); };
+  const cierra = () => { box.hidden = true; inp.setAttribute('aria-expanded', 'false'); };
+  const elige = i => { if (items[i]) { cierra(); inp.blur(); pick(items[i].id); } };
+  inp.addEventListener('focus', pinta);
+  inp.addEventListener('input', pinta);
+  inp.addEventListener('blur', () => setTimeout(cierra, 120));
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (box.hidden) pinta(); sel = Math.min(items.length - 1, sel + 1); resalta(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(0, sel - 1); resalta(); }
+    else if (e.key === 'Enter') { e.preventDefault(); elige(sel >= 0 ? sel : 0); }
+    else if (e.key === 'Escape') { cierra(); inp.blur(); }
+  });
+  box.addEventListener('mousedown', e => { const o = e.target.closest('.cbo'); if (o) { e.preventDefault(); elige(+o.dataset.i); } });
+}
+
+function senalesTop(act) {
   const s = [];
   act.forEach(a => {
     if (!a.rankeable || a.riesgo === 'Muy alto' || !a.mc || !a.mc['1'] || !a.analogo || !a.analogo['7']) return;
@@ -277,7 +322,10 @@ function senalesHTML(act) {
     if ((p1 - .5) * (p7 - .5) <= 0 || Math.abs(p1 - .5) > .2) return;
     s.push({a, p1, sube: p1 > .5, conf: Math.min(Math.abs(p1 - .5), Math.abs(p7 - .5))});
   });
-  s.sort((x, y) => y.conf - x.conf);
+  return s.sort((x, y) => y.conf - x.conf);
+}
+function senalesHTML(act) {
+  const s = senalesTop(act);
   if (!s.length) return '<p class="muted">Hoy el modelo no ve señales consistentes.</p>';
   return `<div class="sg">${s.slice(0, 6).map(({a, p1, sube}) => {
     const p = sube ? p1 : 1 - p1;
@@ -513,12 +561,11 @@ async function vSim(id) {
   id = id || S.ultimo || 'GSPC';
   S.ultimo = id;
   const a = act(id) || d.activos[0];
-  const opciones = d.clases.map(c => `<optgroup label="${esc(c)}">${d.activos.filter(x => x.clase === c).map(x => `<option value="${x.id}" ${x.id === a.id ? 'selected' : ''}>${esc(x.nombre)}</option>`).join('')}</optgroup>`).join('');
   const nn = S.r ? S.r.noticias.filter(n => (n.activos || []).includes(a.id)).slice(0, 6) : [];
   $('#vista').innerHTML = hero('Simulador', `${esc(a.nombre)} <span class="grad">¿qué podría pasar?</span>`, `${esc(a.ticker)} · ${esc(a.clase)}${a.region && a.region !== a.clase ? " · " + esc(a.region) : ""}`) +
-    `<div class="card"><div class="sel"><select id="sel">${opciones}</select>${star(a.id)}</div><div id="det"><p class="muted">Cargando simulación…</p></div></div>
+    `<div class="card"><div class="sel"><div id="bus" class="busw"></div>${star(a.id)}</div><div id="det"><p class="muted">Cargando simulación…</p></div></div>
     ${nn.length ? `<div class="card"><h2>Noticias relacionadas</h2><div class="ngrid">${nn.map(newsCard).join('')}</div><div class="btns"><a class="btn" href="#noticias/${a.id}">Ver todas de ${esc(a.nombre)}</a></div></div>` : ''}`;
-  $('#sel').onchange = e => { location.hash = '#sim/' + e.target.value; };
+  buscador($('#bus'), a, id => { location.hash = '#sim/' + id; });
   bindFav(() => vSim(a.id));
   let det;
   try { det = (await getJSON(`assets/${a.id}.json`, [S.base])).j; } catch (e) { $('#det').innerHTML = '<p>No se pudo cargar el detalle.</p>'; return; }
@@ -712,6 +759,7 @@ function vLista() {
 
 // ---------------------------------------------------------------- CUENTA
 function vCuenta() {
+  setTimeout(pintaApp, 0);
   $('#vista').innerHTML = hero('Cuenta', `Próximamente: <span class="grad">tu cuenta</span>`, 'Hoy la página es abierta y no pide registro. Esta sección muestra hacia dónde va el producto.') + `
     <div class="grid2"><div class="card glow"><h2>Ingresar (aún no disponible)</h2>
       <div class="lock"><div class="sel"><input type="email" placeholder="correo@ejemplo.com" disabled></div><div class="sel"><input type="password" placeholder="contraseña" disabled></div><div class="btns"><button class="btn pri" disabled>Entrar</button><button class="btn" disabled>Crear cuenta</button></div></div>
@@ -719,6 +767,15 @@ function vCuenta() {
     <div class="card"><h2>Qué traerá una cuenta</h2><ul>
       <li>Mi lista sincronizada entre computador, tablet y celular.</li><li>Alertas por correo o Telegram: “avísame si BTC cae más de 5%” o “si sale una noticia de Nvidia”.</li>
       <li>Portafolio propio (tus posiciones de XTB y Binance cargadas a mano o por archivo) con riesgo y probabilidades calculados sobre lo que realmente tienes.</li><li>Historial de lo que decía el modelo cada día y cómo resultó.</li><li>Plan gratuito con lo esencial y plan Pro con alertas ilimitadas y más activos.</li></ul></div></div>
+    <div class="card glow"><h2>App y avisos</h2>
+      <p>Instálala como app en tu celular o computador y recibe avisos de señales nuevas y de movimientos fuertes en <a href="#lista">Mi lista</a>. No usa cookies ni pide registro.</p>
+      <div class="btns" id="appbtns"></div>
+      <ul class="tight">
+        <li><b>Android (Chrome):</b> botón “Instalar app”, o menú ⋮ → <i>Instalar aplicación</i>.</li>
+        <li><b>iPhone / iPad (Safari):</b> botón Compartir → <i>Agregar a pantalla de inicio</i>. Los avisos en iPhone solo funcionan con la app ya instalada (iOS 16.4 o superior).</li>
+        <li><b>Computador (Chrome o Edge):</b> ícono de instalar al final de la barra de direcciones.</li>
+      </ul>
+      <p class="muted" style="font-size:13px">Los avisos llegan mientras la app esté abierta o en segundo plano. Con la app cerrada, el navegador decide si deja revisar (en Android a veces sí, en iPhone y computador no). Para recibirlos siempre, usa también el canal de Telegram.</p></div>
     <div class="note info">Esta página no vende señales de compra/venta ni promete rentabilidad. Su valor es mostrar riesgo y probabilidades de forma clara y honesta, incluyendo cuánto fallan.</div>`;
 }
 
@@ -734,6 +791,73 @@ function vMetodo() {
   <h3>Límites</h3><ul><li>El <a href="#hist" style="color:var(--warn)">Historial</a> guarda lo que decía el modelo cada día y lo compara con lo que pasó, para que lo verifiques tú mismo.</li><li>La calibración histórica muestra que la dirección de un día o una semana es casi un cara o sello; lo confiable es el tamaño del riesgo.</li><li>No considera calendario económico, resultados de empresas ni feriados. Las noticias se muestran como contexto, no entran al cálculo.</li><li>No incluye flujos de ballenas on-chain ni de ETFs (requieren fuentes de pago).</li><li>Un ticker sin datos aparece listado en “Mercados” y se omite sin afectar el resto. Los datos pueden tener minutos u horas de retraso.</li></ul>
   <div class="note">Herramienta para leer el mercado y apoyar tus decisiones. No es asesoría financiera.</div></div>`;
 }
+
+// ---------------------------------------------------------------- app instalable + avisos
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* sin almacenamiento */ } };
+let instalarEv = null, swReg = null;
+const esApp = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const avisosOk = () => 'Notification' in window;
+const avisosOn = () => avisosOk() && Notification.permission === 'granted' && lsGet('lm_avisos') === '1';
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); instalarEv = e; pintaApp(); });
+window.addEventListener('appinstalled', () => { instalarEv = null; pintaApp(); });
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(r => { swReg = r; periodico(); }).catch(() => { /* sin modo app */ });
+}
+async function periodico() {
+  try { if (swReg && swReg.periodicSync && avisosOn()) await swReg.periodicSync.register('probabily-senales', {minInterval: 3 * 60 * 60 * 1000}); } catch (e) { /* no disponible en este navegador */ }
+}
+async function mostrarAviso(titulo, cuerpo, tag, url) {
+  const o = {body: cuerpo, tag, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: {url: url || './#hoy'}};
+  try { const r = swReg || await navigator.serviceWorker.ready; await r.showNotification(titulo, o); }
+  catch (e) { try { new Notification(titulo, o); } catch (e2) { /* sin permiso */ } }
+}
+async function accionApp(que) {
+  if (que === 'instalar') {
+    if (instalarEv) { instalarEv.prompt(); await instalarEv.userChoice.catch(() => {}); instalarEv = null; }
+  } else if (que === 'avisos') {
+    if (avisosOn()) { lsSet('lm_avisos', '0'); }
+    else if (avisosOk()) {
+      const p = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+      if (p === 'granted') { lsSet('lm_avisos', '1'); lsSet('lm_ns', claveSesion()); periodico(); mostrarAviso('Avisos activados', 'Te avisaremos cuando haya señales nuevas y cuando se mueva algo de Mi lista.', 'hola'); }
+    }
+  } else if (que === 'probar') {
+    if (avisosOn()) mostrarAviso('Probabily', 'Así se verán tus avisos.', 'prueba');
+  }
+  pintaApp();
+}
+const claveSesion = () => S.d ? S.d.sesion.id + '|' + S.d.sesion.ref + '|' + S.d.generado_utc : '';
+function avisar() {
+  if (!avisosOn() || !S.d) return;
+  const k = claveSesion(), prev = lsGet('lm_ns');
+  if (prev !== k) {
+    lsSet('lm_ns', k);
+    const s = senalesTop(S.d.activos).slice(0, 3);
+    if (prev && s.length) mostrarAviso('Probabily: señales nuevas', s.map(x => `${x.sube ? '▲' : '▼'} ${x.a.nombre} ${Math.round((x.sube ? x.p1 : 1 - x.p1) * 100)}%`).join('\n'), 'senales', './#hoy');
+  }
+  const hoy = new Date().toISOString().slice(0, 10);
+  S.fav.map(act).filter(a => a && a.d1 != null && Math.abs(a.d1) >= 0.03).forEach(a => {
+    const kk = 'lm_av_' + a.id + '_' + hoy;
+    if (lsGet(kk)) return;
+    lsSet(kk, '1');
+    mostrarAviso(`${a.nombre} ${a.d1 > 0 ? 'sube' : 'baja'} ${pct(a.d1, 1)}`, `Se mueve más de 3% hoy. Toca para ver su simulación.`, 'fav-' + a.id, './#sim/' + a.id);
+  });
+}
+function appHTML(compacto) {
+  const b = [];
+  if (!esApp() && instalarEv) b.push(`<button class="btn pri" data-app="instalar">⬇ Instalar app</button>`);
+  if (avisosOk()) b.push(`<button class="btn ${avisosOn() ? '' : 'pri'}" data-app="avisos">${avisosOn() ? '🔔 Avisos activados · desactivar' : '🔔 Activar avisos'}</button>`);
+  if (avisosOn() && !compacto) b.push(`<button class="btn" data-app="probar">Probar aviso</button>`);
+  return b.join('');
+}
+function pintaApp() {
+  const a = $('#act');
+  if (a) { a.innerHTML = appHTML(true); }
+  const c = $('#appbtns');
+  if (c) c.innerHTML = appHTML(false) || '<span class="muted">Instalar y avisos no están disponibles en este navegador.</span>';
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-app]'); if (b) accionApp(b.dataset.app); });
 
 // ---------------------------------------------------------------- arranque
 cargar();
