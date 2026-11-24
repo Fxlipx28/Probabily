@@ -294,3 +294,35 @@ details.card summary{font-weight:700;color:var(--tx)}
 .tog.on{background:var(--cy)}.tog.on::after{left:21px}
 .legal h3{margin:18px 0 6px}.legal p,.legal li{color:var(--mut);font-size:14px}
 .flinks{margin:8px 0 0}.flinks a{text-decoration:underline;margin-right:14px}
+
+/* menú del celular: tres rayitas + pantalla completa (solo ≤760px) */
+.mbar,.mclose{display:none}
+.btn.ico{display:inline-flex;align-items:center;gap:9px}
+.btn.ico svg{width:18px;height:18px;flex:none}
+.btn.ok{background:rgba(46,158,107,.12);border-color:rgba(46,158,107,.4);color:var(--okt)}
+.side-act .btn.ico{justify-content:center}
+@media(max-width:760px){
+  .mbar{display:flex;position:sticky;top:0;z-index:50;align-items:center;gap:10px;height:54px;padding:0 8px;background:var(--sidebg);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .mbar button,.mclose{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;border-radius:12px;background:transparent;color:var(--tx);cursor:pointer}
+  .mbar button svg,.mclose svg{width:26px;height:26px}
+  .mlogo{font-size:23px;font-weight:900;letter-spacing:-.03em;background:linear-gradient(90deg,#5BA4CF,#2F80B8 60%,#1F6A9C);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+  .side{position:fixed;inset:0;z-index:100;display:none;flex-direction:column;align-items:stretch;gap:0;height:100vh;height:100dvh;overflow-y:auto;overflow-x:hidden;padding:12px 18px 32px;background:var(--bg);border:0;backdrop-filter:none}
+  body.menu .side{display:flex}
+  body.menu{overflow:hidden}
+  .mclose{position:absolute;top:10px;right:10px}
+  .side .logo{display:block;padding:8px 6px 14px}
+  .side .ng{display:block}
+  .side-foot{display:none}
+  #nav{display:block}
+  .nv{padding:14px 12px;margin:2px 0;font-size:17px;white-space:normal}
+  .nv svg{width:22px;height:22px}
+  .side-act{padding:18px 0 0}
+  .side-act .btn{font-size:15px;padding:13px 14px}
+  .tape{position:static}
+}
+@media(max-width:560px){
+  .setrow:has(.seg){flex-direction:column;align-items:stretch;gap:10px}
+  .seg{display:flex;width:100%}
+  .seg button{flex:1;padding:10px 6px;white-space:nowrap}
+  .setrow .btn{align-self:flex-start}
+}

@@ -913,11 +913,20 @@ function avisar() {
     mostrarAviso(`${a.nombre} ${a.d1 > 0 ? 'sube' : 'baja'} ${pct(a.d1, 1)}`, `Se mueve más de ${Math.round(um * 100)}% hoy. Toca para ver su simulación.`, 'fav-' + a.id, './#sim/' + a.id);
   });
 }
+const SVGI = {
+  bajar: 'M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 20h16',
+  campana: 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0',
+  ok: 'M5 12.5l4.5 4.5L19 7.5',
+  play: 'M6 4l14 8-14 8z',
+};
+const ico = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${SVGI[k]}"/></svg>`;
 function appHTML(compacto) {
   const b = [];
-  if (!esApp() && instalarEv) b.push(`<button class="btn pri" data-app="instalar">⬇ Instalar app</button>`);
-  if (avisosOk()) b.push(`<button class="btn ${avisosOn() ? '' : 'pri'}" data-app="avisos">${avisosOn() ? '🔔 Avisos activados · desactivar' : '🔔 Activar avisos'}</button>`);
-  if (avisosOn() && !compacto) b.push(`<button class="btn" data-app="probar">Probar aviso</button>`);
+  if (!esApp() && instalarEv) b.push(`<button class="btn pri ico" data-app="instalar">${ico('bajar')}Instalar app</button>`);
+  if (avisosOk()) b.push(avisosOn()
+    ? `<button class="btn ok ico" data-app="avisos">${ico('ok')}Avisos activados<span class="muted" style="font-weight:500">· desactivar</span></button>`
+    : `<button class="btn pri ico" data-app="avisos">${ico('campana')}Activar avisos</button>`);
+  if (avisosOn() && !compacto) b.push(`<button class="btn ico" data-app="probar">${ico('play')}Probar aviso</button>`);
   return b.join('');
 }
 function pintaApp() {
@@ -927,6 +936,14 @@ function pintaApp() {
   if (c) c.innerHTML = appHTML(false) || '<span class="muted">Instalar y avisos no están disponibles en este navegador.</span>';
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-app]'); if (b) accionApp(b.dataset.app); });
+// menú del celular
+const menu = abrir => { document.body.classList.toggle('menu', abrir); const m = $('#mburger'); if (m) m.setAttribute('aria-expanded', abrir); };
+$('#mburger').onclick = () => menu(true);
+$('#mclose').onclick = () => menu(false);
+$('#nav').addEventListener('click', e => { if (e.target.closest('a')) menu(false); });
+$('#side').addEventListener('click', e => { if (e.target.closest('.logo')) menu(false); });
+window.addEventListener('hashchange', () => menu(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') menu(false); });
 
 // ---------------------------------------------------------------- arranque
 cargar();
