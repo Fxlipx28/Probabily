@@ -117,6 +117,12 @@ def simular(s, rng, n_sims=10000):
     var[0] = np.var(r[:30]) if len(r) >= 30 else np.var(r)
     var = np.maximum(np.nan_to_num(var, nan=sd ** 2), piso)
     z = np.clip(r / np.sqrt(var), -10, 10)
+    # Días sin ningún cambio de precio (activos poco líquidos o con precio congelado): si se dejan en el
+    # sorteo, al re-centrar quedan como una pequeña pérdida y empujan la probabilidad de "sube" hacia abajo.
+    # La dirección se estima entre los días en que el precio sí se movió.
+    mov = r != 0
+    if 0.05 < (1 - mov.mean()) < 0.9:
+        z = z[mov]
     if z.std() <= 0:
         raise ValueError("serie sin variación suficiente")
     z = (z - z.mean()) / z.std()
