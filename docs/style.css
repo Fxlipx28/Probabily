@@ -256,3 +256,12 @@ details.card summary{font-weight:700;color:var(--tx)}
 /* marca Vaykief: cerros al pie de la barra lateral */
 .side-foot{height:110px;margin:24px -14px -20px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 248 110' preserveAspectRatio='none'%3E%3Cpath d='M0 110V60L50 30 90 56 140 14 190 52 248 34V110Z' fill='%23C3D9E8'/%3E%3Cpath d='M0 110V82L60 58 110 80 170 54 248 80V110Z' fill='%239DB9A6'/%3E%3C/svg%3E") bottom/100% 100% no-repeat}
 @media(min-width:981px){.side{display:flex;flex-direction:column}.side-foot{margin-top:auto;flex:none}}
+/* señales (widget Alertas) */
+.sg{display:flex;flex-direction:column;flex:1;justify-content:space-between;gap:2px}
+.sr{display:grid;grid-template-columns:22px 1fr 78px;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--line);text-decoration:none;color:var(--tx)}
+.sr:last-child{border-bottom:0}
+.sr .sa{font-size:13px;font-weight:800}.sa.up{color:var(--up)}.sa.dn{color:var(--dn)}
+.sr .sn{font-weight:700;font-size:13.5px;display:flex;flex-direction:column;min-width:0}
+.sr .sn small{font-weight:500;font-size:11px;color:var(--mut)}
+.sr .sp{display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:13px}
+.sr .sp .rbar{width:100%;margin:0}

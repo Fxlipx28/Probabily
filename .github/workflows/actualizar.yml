@@ -55,3 +55,11 @@ jobs:
           git add -A
           git commit -qm "Datos de mercado $(date -u +%F\ %H:%M) UTC"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" datos
+      - name: Avisar al teléfono (Telegram / ntfy, si hay secretos)
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          [ -f salida/latest.json ] && python -m pipeline.notificar salida/latest.json --solo santiago,cripto || true

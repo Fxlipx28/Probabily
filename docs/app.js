@@ -250,7 +250,7 @@ function vHoy() {
   h += `<div class="grid3 eq">
     <div class="card sm glow"><div class="fill">${gauge(tg, true)}</div></div>
     <div class="card sm"><h2>Resumen</h2><div class="fill">${resumenHTML(d.informe.resumen)}</div></div>
-    <div class="card sm"><h2>Alertas</h2><div class="fill">${d.alertas.length ? alertasHTML(d.alertas.slice(0, 4)) : '<p class="muted">Sin alertas.</p>'}</div></div></div>
+    <div class="card sm"><h2>Alertas <span class="sub">señales más consistentes · mañana</span></h2><div class="fill">${senalesHTML(d.activos)}}</div></div></div>
   <div class="grid2 eq">
     <div class="card sm glow"><h2>Mañana en una mirada <span class="sub">prob. a 1 día</span></h2>
       <div class="grid2 in fill"><div><h3 class="pos">▲ Suben</h3>${top5(1).map(a => rk(a, pc0(a.mc['1'].p_sube))).join('')}</div><div><h3 class="neg">▼ Bajan</h3>${top5(-1).map(a => rk(a, pc0(1 - a.mc['1'].p_sube))).join('')}</div></div>
@@ -268,6 +268,21 @@ function vHoy() {
   ligar();
   const ligarInf = () => $$('[data-inf]').forEach(c => c.onclick = () => { S.inf = +c.dataset.inf; $('#infb').innerHTML = informeHTML(); ligarInf(); });
   ligarInf();
+}
+function senalesHTML(act) {
+  const s = [];
+  act.forEach(a => {
+    if (!a.rankeable || a.riesgo === 'Muy alto' || !a.mc || !a.mc['1'] || !a.analogo || !a.analogo['7']) return;
+    const p1 = a.mc['1'].p_sube, p7 = a.analogo['7'].p_sube;
+    if ((p1 - .5) * (p7 - .5) <= 0 || Math.abs(p1 - .5) > .2) return;
+    s.push({a, p1, sube: p1 > .5, conf: Math.min(Math.abs(p1 - .5), Math.abs(p7 - .5))});
+  });
+  s.sort((x, y) => y.conf - x.conf);
+  if (!s.length) return '<p class="muted">Hoy el modelo no ve señales consistentes.</p>';
+  return `<div class="sg">${s.slice(0, 6).map(({a, p1, sube}) => {
+    const p = sube ? p1 : 1 - p1;
+    return `<a class="sr" href="#sim/${a.id}"><span class="sa ${sube ? 'up' : 'dn'}">${sube ? '▲' : '▼'}</span><span class="sn">${esc(a.nombre)}<small>${sube ? 'podría subir' : 'podría bajar'}</small></span><span class="sp"><b class="${sube ? 'pos' : 'neg'}">${Math.round(p * 100)}%</b><span class="rbar"><i class="${sube ? 'up' : 'dn'}" style="width:${Math.round(p * 100)}%"></i></span></span></a>`;
+  }).join('')}</div>`;
 }
 function alertasHTML(l) {
   return `<div class="als">${l.map(x => {
